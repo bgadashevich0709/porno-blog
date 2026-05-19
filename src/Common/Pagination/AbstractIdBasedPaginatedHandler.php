@@ -85,10 +85,8 @@ abstract class AbstractIdBasedPaginatedHandler
         };
     }
 
-    // --- Абстрактные методы, которые каждая доменная область реализует по-своему ---
     abstract public function getTotalCount(array $context): int;
 
-    // ИСПРАВЛЕНИЕ: Метод fetchIds теперь требует интерфейс, а не конкретный DTO категорий
     abstract public function fetchIds(int $offset, int $perPage, PaginationRequestInterface $requestDto, array $context): array;
 
     abstract public function fetchFullRowsByIds(array $idList, array $context): array;

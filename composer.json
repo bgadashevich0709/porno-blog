@@ -33,6 +33,7 @@
   },
   "scripts": {
     "db:fixtures": "php bin/load-fixtures.php",
-    "cs": "php-cs-fixer fix --allow-risky=yes"
+    "cs": "php-cs-fixer fix --allow-risky=yes",
+    "test": "vendor/bin/phpunit tests"
   }
 }
