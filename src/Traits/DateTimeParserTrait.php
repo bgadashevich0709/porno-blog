@@ -3,8 +3,8 @@
 namespace App\Traits;
 
 use DateTimeImmutable;
-use RuntimeException;
 use Exception;
+use RuntimeException;
 
 trait DateTimeParserTrait
 {

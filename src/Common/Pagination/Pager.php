@@ -83,7 +83,7 @@ class Pager
         $url = $isCurrent ? null : ($this->urlGenerator)($pageNumber);
 
         return new PageDto(
-            label: (string)$pageNumber,
+            label: (string) $pageNumber,
             pageNumber: $pageNumber,
             url: $url,
             isCurrent: $isCurrent,

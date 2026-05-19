@@ -9,8 +9,8 @@ use App\Common\Tracking\PageViewTracker;
 use App\Controller\IndexController;
 use App\Exceptions\ResourceNotFoundException;
 use App\Repository\PostRepositoryInterface;
-use App\UseCase\Post\Dto\PostShowDto;
 use App\Traits\PostMapper;
+use App\UseCase\Post\Dto\PostShowDto;
 use Exception;
 
 readonly class PostShowHandler
@@ -67,7 +67,7 @@ readonly class PostShowHandler
                 'Главная',
                 $this->urlGenerator->generate(IndexController::class, 'index')
             ),
-            new BreadcrumbItemDto($postDto->title)
+            new BreadcrumbItemDto($postDto->title),
         ];
     }
 

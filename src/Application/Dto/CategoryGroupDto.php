@@ -12,9 +12,7 @@ class CategoryGroupDto
         public string $title,
         public array  $latestPosts,
         public string $link
-    )
-    {
-    }
+    ) {}
 
     /**
      * @param array<PostListItemDto> $latestPosts
@@ -22,8 +20,8 @@ class CategoryGroupDto
     public static function fromArray(array $data, array $latestPosts, string $link): self
     {
         return new self(
-            id: (string)$data['id'],
-            title: (string)$data['name'],
+            id: (string) $data['id'],
+            title: (string) $data['name'],
             latestPosts: $latestPosts,
             link: $link
         );

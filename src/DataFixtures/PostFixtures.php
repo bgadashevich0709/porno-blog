@@ -2,8 +2,8 @@
 
 namespace App\DataFixtures;
 
-use App\Entity\Post;
 use App\Entity\Category;
+use App\Entity\Post;
 use Doctrine\Common\DataFixtures\FixtureInterface;
 use Doctrine\Persistence\ObjectManager;
 use Faker\Factory;

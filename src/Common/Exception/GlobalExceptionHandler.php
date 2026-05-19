@@ -6,6 +6,7 @@ use App\Common\Response\ResponseStrategyFactory;
 use App\Common\Response\Startegy\JsonStrategy;
 use App\Common\Validator\Exception\ValidationException;
 use App\Exceptions\AccessDeniedException;
+use App\Exceptions\InvalidArgumentException; // Добавили импорт
 use App\Exceptions\ResourceNotFoundException;
 use Throwable;
 
@@ -33,7 +34,7 @@ class GlobalExceptionHandler
                 $template = 'errors/404.tpl';
                 $data = [
                     'success' => false,
-                    'message' => $exception->getMessage() ?: 'Страница не найдена'
+                    'message' => $exception->getMessage() ?: 'Страница не найдена',
                 ];
                 $this->logException($exception, 'WARNING', $statusCode);
                 break;
@@ -43,7 +44,17 @@ class GlobalExceptionHandler
                 $template = 'errors/403.tpl';
                 $data = [
                     'success' => false,
-                    'message' => $exception->getMessage() ?: 'Доступ запрещен'
+                    'message' => $exception->getMessage() ?: 'Доступ запрещен',
+                ];
+                $this->logException($exception, 'WARNING', $statusCode);
+                break;
+
+            case $exception instanceof InvalidArgumentException:
+                $statusCode = $exception->getStatusCode();
+                $template = 'errors/400.tpl';
+                $data = [
+                    'success' => false,
+                    'message' => $exception->getMessage() ?: 'Некорректный запрос',
                 ];
                 $this->logException($exception, 'WARNING', $statusCode);
                 break;
@@ -54,7 +65,7 @@ class GlobalExceptionHandler
                 $data = [
                     'success' => false,
                     'message' => $exception->getMessage(),
-                    'errors'  => $exception->getErrors()
+                    'errors'  => $exception->getErrors(),
                 ];
                 $this->logException($exception, 'INFO', $statusCode);
                 break;
@@ -64,20 +75,19 @@ class GlobalExceptionHandler
                 $template = 'errors/500.tpl';
                 $data = [
                     'success' => false,
-                    'message' => 'Произошла внутренняя ошибка сервера.'
+                    'message' => 'Произошла внутренняя ошибка сервера.',
                 ];
 
                 if ($strategy instanceof JsonStrategy) {
                     $data['error_details'] = [
                         'message' => $exception->getMessage(),
                         'file' => $exception->getFile(),
-                        'line' => $exception->getLine()
+                        'line' => $exception->getLine(),
                     ];
                 } else {
                     $data['exception'] = $exception;
                 }
 
-                // Критическая ошибка — пишем полный стек вызовов (Trace)
                 $this->logException($exception, 'ERROR', $statusCode, true);
                 break;
         }

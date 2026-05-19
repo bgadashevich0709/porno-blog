@@ -30,8 +30,12 @@ class GlobalSecurityMiddleware implements MiddlewareInterface
 
     private function sanitizeGlobalArrays(): void
     {
-        if (!empty($_POST)) { $_POST = $this->sanitizeArray($_POST); }
-        if (!empty($_GET)) { $_GET = $this->sanitizeArray($_GET); }
+        if (!empty($_POST)) {
+            $_POST = $this->sanitizeArray($_POST);
+        }
+        if (!empty($_GET)) {
+            $_GET = $this->sanitizeArray($_GET);
+        }
     }
 
     private function sanitizeArray(array $data): array
@@ -40,7 +44,7 @@ class GlobalSecurityMiddleware implements MiddlewareInterface
             if (is_array($value)) {
                 $data[$key] = $this->sanitizeArray($value);
             } else {
-                $data[$key] = htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+                $data[$key] = htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
             }
         }
         return $data;

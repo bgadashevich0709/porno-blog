@@ -2,22 +2,24 @@
 
 namespace App\Application\Dto;
 
+use App\Exceptions\InvalidArgumentException;
 use App\Traits\DateTimeParserTrait;
 
+/**
+ * @noinspection PhpSyntaxErrorInspection
+ */
 class PostListItemDto
 {
     use DateTimeParserTrait;
 
-    /* Временно отключено до PHP 8.4
     public int $viewsCount {
         set {
             if ($value < 0) {
-                throw new \InvalidArgumentException("Просмотры не могут быть отрицательными");
+                throw new InvalidArgumentException("Просмотры не могут быть отрицательными");
             }
             $this->viewsCount = $value;
         }
     }
-    */
 
     /**
      * @param array<string> $categoryIds Массив строк (UUID) категорий
@@ -27,16 +29,13 @@ class PostListItemDto
         public string $title,
         public string $description,
         public string $image,
-        public int    $viewsCount, // Сделано public свойством для совместимости
+        int $viewsCount, // Обычный аргумент (без public)
         public array  $categoryIds,
         public string $link,
         public \DateTimeImmutable $createdAt // Дата публикации
-    )
-    {
-        // Старый вариант валидации до PHP 8.4
-        if ($this->viewsCount < 0) {
-            throw new \InvalidArgumentException("Просмотры не могут быть отрицательными");
-        }
+    ) {
+        // Присвоение триггерит хук set в рантайме
+        $this->viewsCount = $viewsCount;
     }
 
     /**
@@ -49,11 +48,11 @@ class PostListItemDto
             : ($data['category_ids'] ?? []);
 
         return new self(
-            id: (string)$data['id'],
-            title: (string)$data['title'],
-            description: (string)$data['description'],
-            image: (string)$data['image'],
-            viewsCount: (int)$data['views'],
+            id: (string) $data['id'],
+            title: (string) $data['title'],
+            description: (string) $data['description'],
+            image: (string) $data['image'],
+            viewsCount: (int) $data['views'],
             categoryIds: $categoryIds,
             link: $link,
             createdAt: self::parseRequiredDateTime($data, 'createdAt')

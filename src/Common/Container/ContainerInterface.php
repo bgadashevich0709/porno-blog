@@ -2,8 +2,4 @@
 
 namespace App\Common\Container;
 
-interface ContainerInterface
-{
-
-}
-
+interface ContainerInterface {}

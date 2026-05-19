@@ -3,16 +3,15 @@
 namespace App\Controller;
 
 use App\Common\Controller\AbstractController;
+use App\Common\Middleware\LoggerMiddleware;
 use App\Common\Router\Route\Get;
 use App\UseCase\HomePage\HomePageIndexHandler;
-use App\Common\Middleware\LoggerMiddleware;
 
 class IndexController extends AbstractController
 {
     public function __construct(
         private readonly HomePageIndexHandler $homepageIndexHandler,
-    )
-    {
+    ) {
         parent::__construct();
     }
 
@@ -21,7 +20,7 @@ class IndexController extends AbstractController
     {
         $this->render('index.tpl', [
             'title' => 'Главная страница блога',
-            'data' => $this->homepageIndexHandler->getHomepageData()
+            'data' => $this->homepageIndexHandler->getHomepageData(),
         ]);
     }
 }

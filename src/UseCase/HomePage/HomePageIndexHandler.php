@@ -5,12 +5,11 @@ namespace App\UseCase\HomePage;
 use App\Application\Dto\CategoryGroupDto;
 use App\Application\Dto\PostListItemDto;
 use App\Common\Router\UrlGenerator;
+use App\Controller\CategoryController;
 use App\Repository\CategoryRepositoryInterface;
 use App\Repository\PostRepositoryInterface;
 use App\Traits\PostMapper;
 use App\UseCase\HomePage\Dto\HomepageDataDto;
-use App\Controller\PostController;
-use App\Controller\CategoryController;
 use Doctrine\DBAL\Exception;
 
 readonly class HomePageIndexHandler
@@ -85,7 +84,7 @@ readonly class HomePageIndexHandler
 
         // Распределяем посты по категориям
         foreach ($categoriesRaw as $catRow) {
-            $catId = (string)$catRow['id'];
+            $catId = (string) $catRow['id'];
             $categoryPosts = [];
 
             while (count($categoryPosts) < $postsLimit) {
@@ -134,7 +133,7 @@ readonly class HomePageIndexHandler
     private function mapCategoryGroup(array $catRow, array $categoryPosts): CategoryGroupDto
     {
         $categoryUrl = $this->urlGenerator->generate(CategoryController::class, 'show', [
-            'id' => $catRow['id']
+            'id' => $catRow['id'],
         ]);
 
         return CategoryGroupDto::fromArray($catRow, $categoryPosts, $categoryUrl);

@@ -1,4 +1,5 @@
 <?php
+
 // src/DataFixtures/CategoryFixtures.php
 
 namespace App\DataFixtures;

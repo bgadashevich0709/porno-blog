@@ -2,11 +2,11 @@
 
 namespace Tests\Unit\UseCase\HomePage;
 
-use App\UseCase\HomePage\HomePageIndexHandler;
+use App\Common\Router\UrlGenerator;
 use App\Repository\CategoryRepositoryInterface;
 use App\Repository\PostRepositoryInterface;
-use App\Common\Router\UrlGenerator;
 use App\UseCase\HomePage\Dto\HomepageDataDto;
+use App\UseCase\HomePage\HomePageIndexHandler;
 use PHPUnit\Framework\TestCase;
 
 class HomePageIndexHandlerTest extends TestCase
@@ -37,7 +37,7 @@ class HomePageIndexHandlerTest extends TestCase
     {
         $categoriesRaw = [
             ['id' => 1, 'name' => 'Tech'],
-            ['id' => 2, 'name' => 'Design']
+            ['id' => 2, 'name' => 'Design'],
         ];
 
         $this->categoryRepository->method('findNonEmptyCategories')

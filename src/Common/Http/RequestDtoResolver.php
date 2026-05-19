@@ -60,10 +60,11 @@ readonly class RequestDtoResolver
                     // Если параметр передан и он не пустой
                     if ($hasParam && $rawValue !== '') {
                         // Пытаемся превратить строку/число из URL в валидный элемент Enum
-                        $enumValue = $typeName::tryFrom((string)$rawValue);
+                        $enumValue = $typeName::tryFrom((string) $rawValue);
 
                         // Если получилось — берем его. Если нет (пришел мусор) — берем дефолтное значение из PHP-кода (если оно есть)
-                        $rawValue = $enumValue ?? ($parameter->isDefaultValueAvailable()
+                        $rawValue = $enumValue ?? (
+                            $parameter->isDefaultValueAvailable()
                             ? $parameter->getDefaultValue()
                             : null
                         );
@@ -77,10 +78,10 @@ readonly class RequestDtoResolver
                 elseif ($rawValue !== null) {
                     // Принудительно превращаем строку из URL в жесткий integer, если DTO ждет число
                     if ($typeName === 'int') {
-                        $rawValue = (int)$rawValue;
+                        $rawValue = (int) $rawValue;
                         // Принудительно превращаем в string, если DTO ждет строку
                     } elseif ($typeName === 'string') {
-                        $rawValue = (string)$rawValue;
+                        $rawValue = (string) $rawValue;
                     }
                 }
                 // СЛУЧАЙ В: Значение из URL не пришло вовсе

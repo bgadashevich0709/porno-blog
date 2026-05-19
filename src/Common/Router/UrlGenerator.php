@@ -39,7 +39,7 @@ class UrlGenerator
         foreach ($params as $key => $value) {
             $placeholder = "{" . $key . "}";
             if (str_contains($path, $placeholder)) {
-                $path = str_replace($placeholder, urlencode((string)$value), $path);
+                $path = str_replace($placeholder, urlencode((string) $value), $path);
                 unset($params[$key]);
             }
         }

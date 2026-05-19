@@ -7,11 +7,8 @@ use App\Common\Http\Attribute\MapQueryString;
 use App\Common\Http\Context;
 use App\Common\Http\Request;
 use App\Common\Http\RequestDtoResolver;
-use App\Common\Middleware\MiddlewareInterface;
 use App\Common\Router\Route\Route;
-use App\Common\Validator\Exception\ValidationException;
 use ReflectionClass;
-use Exception;
 
 class Router
 {
@@ -59,8 +56,7 @@ class Router
         string $method,
         array $middlewares,
         string $format
-    ): void
-    {
+    ): void {
         $regex = '#^' . preg_replace('#\{[a-zA-Z0-9_]+\}#', '([^/]+)', $path) . '$#';
 
         $this->routes[] = [
@@ -70,7 +66,7 @@ class Router
             'controller' => $controller,
             'method'     => $method,
             'middleware' => $middlewares,
-            'format' => $format
+            'format' => $format,
         ];
     }
 

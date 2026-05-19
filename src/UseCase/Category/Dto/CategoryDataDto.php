@@ -9,7 +9,7 @@ use App\Common\Pagination\Dto\PaginateDto;
 use App\Common\Pagination\Pager;
 use JsonSerializable;
 
-class CategoryDataDto  implements JsonSerializable
+class CategoryDataDto implements JsonSerializable
 {
     public function __construct(
         public CategoryDto $category,
@@ -18,10 +18,7 @@ class CategoryDataDto  implements JsonSerializable
         public array $breadcrumbs,
         public SortPanelDto $sortPanel,
         public LimitControlDto $limitControl
-    )
-    {
-
-    }
+    ) {}
 
     public function jsonSerialize(): mixed
     {

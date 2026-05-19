@@ -3,7 +3,6 @@
 namespace App\Common\Middleware;
 
 use App\Common\Http\Context;
-use Exception;
 
 class AuthMiddleware implements MiddlewareInterface
 {

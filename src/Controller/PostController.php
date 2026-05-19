@@ -11,8 +11,7 @@ class PostController extends AbstractController
 {
     public function __construct(
         private readonly PostShowHandler $postShowHandler,
-    )
-    {
+    ) {
         parent::__construct();
     }
 
@@ -24,7 +23,7 @@ class PostController extends AbstractController
         $this->render('post.tpl', [
             'title' => $data->post->title,
             'data' => $data,
-//            'similarPosts' => $data->similarPosts
+            //            'similarPosts' => $data->similarPosts
         ]);
     }
 }

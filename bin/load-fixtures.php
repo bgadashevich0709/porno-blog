@@ -1,12 +1,12 @@
 <?php
 
-use App\DataFixtures\PostFixtures;
 use App\DataFixtures\CategoryFixtures;
+use App\DataFixtures\PostFixtures;
 use Doctrine\Common\DataFixtures\Executor\ORMExecutor;
 use Doctrine\Common\DataFixtures\Loader;
 use Doctrine\Common\DataFixtures\Purger\ORMPurger;
 
-require_once dirname(__FILE__,2) . '/cli-config.php';
+require_once dirname(__FILE__, 2) . '/cli-config.php';
 
 $entityManager = getEntityManager();
 

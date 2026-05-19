@@ -2,8 +2,6 @@
 
 namespace App\Repository;
 
-use Doctrine\DBAL\Query\QueryBuilder;
-
 interface PostRepositoryInterface
 {
     public function findLatestPostsForCategories(array $categoryIds, int $limit, int $offset = 0): array;

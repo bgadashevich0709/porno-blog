@@ -15,16 +15,13 @@ class PostShowDto implements JsonSerializable
         public PostDto $post,
         public array $similarPosts,
         public array $breadcrumbs,
-    )
-    {
-
-    }
+    ) {}
 
     public function jsonSerialize(): mixed
     {
-         return [
-             'post' => $this->post,
-             'similarPosts' => $this->similarPosts,
-         ];
+        return [
+            'post' => $this->post,
+            'similarPosts' => $this->similarPosts,
+        ];
     }
 }

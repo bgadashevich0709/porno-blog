@@ -13,8 +13,7 @@ class CategoryController extends AbstractController
 {
     public function __construct(
         private readonly CategoryShowHandler $homepageIndexHandler,
-    )
-    {
+    ) {
         parent::__construct();
     }
 
@@ -26,7 +25,7 @@ class CategoryController extends AbstractController
      * Например: #[Get('/categories/{id}', middleware: [...], format: 'json')] или format: 'xml'.
      * Роутер запишет это значение в $_SERVER['ROUTE_FORMAT'], и фабрика выберет нужный класс ответа.
      */
-//    #[Get('/categories/{id}', middleware: [LoggerMiddleware::class], format: 'xml')]
+    //    #[Get('/categories/{id}', middleware: [LoggerMiddleware::class], format: 'xml')]
     #[Get('/categories/{id}', middleware: [LoggerMiddleware::class])]
     public function show(string $id, #[MapQueryString] CategoryRequestDto $requestDto): void
     {

@@ -2,9 +2,12 @@
 
 namespace App\Exceptions;
 
-use Exception;
-
-class InvalidArgumentException extends Exception
+class InvalidArgumentException extends HttpException
 {
+    protected $message = 'Invalid argument provided.';
 
+    public function getStatusCode(): int
+    {
+        return 400;
+    }
 }

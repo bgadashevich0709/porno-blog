@@ -39,7 +39,7 @@ class XmlStrategy implements ResponseStrategyInterface
                 $this->arrayToXml($value, $subnode);
             } else {
                 // Защищаем строку от спецсимволов XML (например, &, <, >)
-                $xml->addChild($key, htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8'));
+                $xml->addChild($key, htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8'));
             }
         }
     }

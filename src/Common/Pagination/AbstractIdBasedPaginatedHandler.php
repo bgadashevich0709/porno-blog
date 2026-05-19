@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Common\Pagination;
 
 use App\Common\Pagination\Dto\PaginateDto;
-use App\Common\Pagination\Pager;
 
 /**
  * Архитектурный паттерн: Шаблонный метод (Template Method).
@@ -27,7 +26,7 @@ abstract class AbstractIdBasedPaginatedHandler
         if ($totalItems === 0) {
             return [
                 'postsData' => new PaginateDto([], $requestDto->getPage(), $requestDto->getPerPage(), 0, 0),
-                'pager' => new Pager($this->createUrlGenerator($context), $requestDto->getPerPage())
+                'pager' => new Pager($this->createUrlGenerator($context), $requestDto->getPerPage()),
             ];
         }
 
@@ -49,7 +48,7 @@ abstract class AbstractIdBasedPaginatedHandler
 
         return [
             'postsData' => $postsData,
-            'pager' => $pager
+            'pager' => $pager,
         ];
     }
 
@@ -72,7 +71,7 @@ abstract class AbstractIdBasedPaginatedHandler
             if ($value instanceof \BackedEnum) {
                 $queryParams[$key] = $value->value;
             } elseif (is_object($value)) {
-                $queryParams[$key] = $value->name ?? (string)$value;
+                $queryParams[$key] = $value->name ?? (string) $value;
             }
         }
 

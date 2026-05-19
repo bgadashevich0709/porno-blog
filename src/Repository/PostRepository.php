@@ -7,16 +7,13 @@ use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Exception;
 use Doctrine\DBAL\Query\QueryBuilder;
 use Doctrine\ORM\EntityManagerInterface;
-
 use Doctrine\ORM\EntityRepository;
-
 
 /**
  * @extends EntityRepository<Post>
  */
 class PostRepository extends EntityRepository implements PostRepositoryInterface
 {
-
     public function __construct(EntityManagerInterface $em)
     {
         parent::__construct($em, $em->getClassMetadata(Post::class));
@@ -55,9 +52,9 @@ class PostRepository extends EntityRepository implements PostRepositoryInterface
         $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative($sql, [
             'categoryIds' => $categoryIds,
             'offset' => $offset,
-            'limit' => $limit
+            'limit' => $limit,
         ], [
-            'categoryIds' => ArrayParameterType::STRING
+            'categoryIds' => ArrayParameterType::STRING,
         ]);
 
         return array_map(function (array $row) {
@@ -88,7 +85,7 @@ class PostRepository extends EntityRepository implements PostRepositoryInterface
         ";
 
         $row = $this->getEntityManager()->getConnection()->fetchAssociative($sql, [
-            'id' => $id
+            'id' => $id,
         ]);
 
         if (!$row) {
@@ -138,10 +135,12 @@ class PostRepository extends EntityRepository implements PostRepositoryInterface
             // Перечисляем только необходимые для списков поля, убирая content
             ->select(
                 'p.id',
-                'p.title', 'p.image',
+                'p.title',
+                'p.image',
                 'p.description',
                 'p.createdAt',
-                'p.views')
+                'p.views'
+            )
             ->from('posts', 'p');
     }
 

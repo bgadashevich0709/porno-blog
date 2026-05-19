@@ -4,12 +4,12 @@ use App\Common\Config\DbConfig;
 use App\Common\Config\Env;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Types\Exception\TypesException;
-use Doctrine\Migrations\Configuration\Migration\PhpFile;
-use Doctrine\ORM\ORMSetup;
-use Doctrine\ORM\EntityManager;
-use Doctrine\Migrations\Configuration\EntityManager\ExistingEntityManager;
-use Doctrine\Migrations\DependencyFactory;
 use Doctrine\DBAL\Types\Type;
+use Doctrine\Migrations\Configuration\EntityManager\ExistingEntityManager;
+use Doctrine\Migrations\Configuration\Migration\PhpFile;
+use Doctrine\Migrations\DependencyFactory;
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\ORMSetup;
 use Ramsey\Uuid\Doctrine\UuidType;
 
 require_once __DIR__ . '/vendor/autoload.php';

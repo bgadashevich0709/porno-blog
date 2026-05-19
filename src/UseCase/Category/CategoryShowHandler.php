@@ -22,7 +22,6 @@ use App\Traits\PostMapper;
 use App\UseCase\Category\Dto\CategoryDataDto;
 use App\UseCase\Category\Dto\CategoryRequestDto;
 use Doctrine\DBAL\ParameterType;
-use Smarty\Exception;
 
 class CategoryShowHandler extends AbstractIdBasedPaginatedHandler
 {
@@ -32,9 +31,7 @@ class CategoryShowHandler extends AbstractIdBasedPaginatedHandler
         private readonly CategoryRepositoryInterface $categoryRepository,
         private readonly PostRepositoryInterface     $postRepository,
         protected readonly UrlGenerator              $urlGenerator
-    )
-    {
-    }
+    ) {}
 
     /**
      * @throws ResourceNotFoundException
@@ -62,7 +59,7 @@ class CategoryShowHandler extends AbstractIdBasedPaginatedHandler
             'requestDto' => $requestDto,
             'route_controller' => CategoryController::class,
             'route_method' => 'show',
-            'route_params' => ['id' => $categoryId]
+            'route_params' => ['id' => $categoryId],
         ]);
     }
 
@@ -73,7 +70,7 @@ class CategoryShowHandler extends AbstractIdBasedPaginatedHandler
                 'Главная',
                 $this->urlGenerator->generate(IndexController::class, 'index')
             ),
-            new BreadcrumbItemDto($categoryTitle)
+            new BreadcrumbItemDto($categoryTitle),
         ];
     }
 
@@ -103,7 +100,7 @@ class CategoryShowHandler extends AbstractIdBasedPaginatedHandler
     {
         $countQb = $this->postRepository->getCountQueryBuilder($context['categoryId']);
 
-        return (int)$countQb->executeQuery()->fetchOne();
+        return (int) $countQb->executeQuery()->fetchOne();
     }
 
     /**
