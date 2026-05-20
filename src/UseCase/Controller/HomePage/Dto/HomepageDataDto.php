@@ -1,6 +1,6 @@
 <?php
 
-namespace App\UseCase\HomePage\Dto;
+namespace App\UseCase\Controller\HomePage\Dto;
 
 use App\Application\Dto\CategoryGroupDto;
 

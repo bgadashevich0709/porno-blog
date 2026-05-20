@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\UseCase\Category;
+namespace App\UseCase\Controller\Category;
 
 use App\Application\Dto\BreadcrumbItemDto;
 use App\Application\Dto\CategoryDto;
@@ -19,8 +19,8 @@ use App\Exceptions\ResourceNotFoundException;
 use App\Repository\CategoryRepositoryInterface;
 use App\Repository\PostRepositoryInterface;
 use App\Traits\PostMapper;
-use App\UseCase\Category\Dto\CategoryDataDto;
-use App\UseCase\Category\Dto\CategoryRequestDto;
+use App\UseCase\Controller\Category\Dto\CategoryDataDto;
+use App\UseCase\Controller\Category\Dto\CategoryRequestDto;
 use Doctrine\DBAL\ParameterType;
 
 class CategoryShowHandler extends AbstractIdBasedPaginatedHandler

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\UseCase\HomePage\Handler;
+namespace App\UseCase\Controller\HomePage\Handler;
 
-use App\UseCase\HomePage\Dto\HomepageDataDto;
+use App\UseCase\Controller\HomePage\Dto\HomepageDataDto;
 
 interface HomePageIndexHandlerInterface
 {

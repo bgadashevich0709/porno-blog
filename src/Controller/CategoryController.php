@@ -6,8 +6,8 @@ use App\Common\Controller\AbstractController;
 use App\Common\Http\Attribute\MapQueryString;
 use App\Common\Middleware\LoggerMiddleware;
 use App\Common\Router\Route\Get;
-use App\UseCase\Category\CategoryShowHandler;
-use App\UseCase\Category\Dto\CategoryRequestDto;
+use App\UseCase\Controller\Category\CategoryShowHandler;
+use App\UseCase\Controller\Category\Dto\CategoryRequestDto;
 
 class CategoryController extends AbstractController
 {

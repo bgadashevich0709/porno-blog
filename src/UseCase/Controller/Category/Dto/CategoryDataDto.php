@@ -1,6 +1,6 @@
 <?php
 
-namespace App\UseCase\Category\Dto;
+namespace App\UseCase\Controller\Category\Dto;
 
 use App\Application\Dto\CategoryDto;
 use App\Application\Dto\LimitControlDto;

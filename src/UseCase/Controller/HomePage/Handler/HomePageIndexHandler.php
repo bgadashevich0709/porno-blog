@@ -1,6 +1,6 @@
 <?php
 
-namespace App\UseCase\HomePage\Handler;
+namespace App\UseCase\Controller\HomePage\Handler;
 
 use App\Application\Dto\CategoryGroupDto;
 use App\Application\Dto\PostListItemDto;
@@ -9,7 +9,7 @@ use App\Controller\CategoryController;
 use App\Repository\CategoryRepositoryInterface;
 use App\Repository\PostRepositoryInterface;
 use App\Traits\PostMapper;
-use App\UseCase\HomePage\Dto\HomepageDataDto;
+use App\UseCase\Controller\HomePage\Dto\HomepageDataDto;
 use Doctrine\DBAL\Exception;
 
 readonly class HomePageIndexHandler implements HomePageIndexHandlerInterface

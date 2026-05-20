@@ -1,16 +1,18 @@
 <?php
 
-namespace App\UseCase\Post;
+namespace App\UseCase\Controller\Post;
 
 use App\Application\Dto\BreadcrumbItemDto;
 use App\Application\Dto\PostDto;
+use App\Common\Event\EventDispatcher;
 use App\Common\Router\UrlGenerator;
 use App\Common\Tracking\PageViewTracker;
 use App\Controller\IndexController;
 use App\Exceptions\ResourceNotFoundException;
 use App\Repository\PostRepositoryInterface;
 use App\Traits\PostMapper;
-use App\UseCase\Post\Dto\PostShowDto;
+use App\UseCase\Controller\Post\Dto\PostShowDto;
+use App\UseCase\Event\PostUpdatedEvent;
 use Exception;
 
 readonly class PostShowHandler
@@ -20,7 +22,8 @@ readonly class PostShowHandler
     public function __construct(
         private PostRepositoryInterface $postRepository,
         private UrlGenerator            $urlGenerator,
-        private PageViewTracker         $pageViewTracker
+        private PageViewTracker         $pageViewTracker,
+        private EventDispatcher         $dispatcher
     ) {}
 
     /**
@@ -30,10 +33,7 @@ readonly class PostShowHandler
     {
         $postDto = $this->getPostOrThrow($id);
 
-        if ($this->pageViewTracker->trackCurrentPage()) {
-            $this->postRepository->incrementViewsCount($id);
-            $postDto->viewsCount++;
-        }
+        $this->trackAndNotify($id, $postDto);
 
         $breadcrumbs = $this->buildBreadcrumbs($postDto);
 
@@ -44,6 +44,16 @@ readonly class PostShowHandler
         $similarPosts = $this->getSimilarPosts($id, $postDto->categoryIds, $similarLimit);
 
         return new PostShowDto($postDto, $similarPosts, $breadcrumbs);
+    }
+
+    private function trackAndNotify(string $id, PostDto $postDto): void
+    {
+        if ($this->pageViewTracker->trackCurrentPage()) {
+            $this->postRepository->incrementViewsCount($id);
+            $postDto->viewsCount++;
+
+            $this->dispatcher->dispatch(new PostUpdatedEvent((int) $id));
+        }
     }
 
     /**

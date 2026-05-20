@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\UseCase\HomePage\Handler;
+namespace App\UseCase\Controller\HomePage\Handler;
 
 use App\Common\Cache\CacheInterface;
-use App\UseCase\HomePage\Dto\HomepageDataDto;
+use App\UseCase\Controller\HomePage\Dto\HomepageDataDto;
 
 readonly class CachedHomePageIndexHandler implements HomePageIndexHandlerInterface
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\UseCase\Post\Dto;
+namespace App\UseCase\Controller\Post\Dto;
 
 use App\Application\Dto\PostDto;
 use App\Application\Dto\PostListItemDto;

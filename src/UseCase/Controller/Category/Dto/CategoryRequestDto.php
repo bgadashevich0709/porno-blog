@@ -1,6 +1,6 @@
 <?php
 
-namespace App\UseCase\Category\Dto;
+namespace App\UseCase\Controller\Category\Dto;
 
 use App\Application\Enum\CategorySort;
 use App\Application\Enum\SortWay;

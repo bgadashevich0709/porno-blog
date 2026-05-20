@@ -5,7 +5,7 @@ namespace App\Controller;
 use App\Common\Controller\AbstractController;
 use App\Common\Middleware\LoggerMiddleware;
 use App\Common\Router\Route\Get;
-use App\UseCase\Post\PostShowHandler;
+use App\UseCase\Controller\Post\PostShowHandler;
 
 class PostController extends AbstractController
 {
