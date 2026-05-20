@@ -9,6 +9,6 @@ use App\Common\Event\EventInterface;
 final readonly class CategoryUpdatedEvent implements EventInterface
 {
     public function __construct(
-        public int $categoryId
+        public string $categoryId
     ) {}
 }

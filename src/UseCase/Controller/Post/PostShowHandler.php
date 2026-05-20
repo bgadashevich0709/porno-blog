@@ -52,7 +52,7 @@ readonly class PostShowHandler
             $this->postRepository->incrementViewsCount($id);
             $postDto->viewsCount++;
 
-            $this->dispatcher->dispatch(new PostUpdatedEvent((int) $id));
+            $this->dispatcher->dispatch(new PostUpdatedEvent($id));
         }
     }
 

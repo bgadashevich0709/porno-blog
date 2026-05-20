@@ -9,6 +9,6 @@ use App\Common\Event\EventInterface;
 final readonly class PostUpdatedEvent implements EventInterface
 {
     public function __construct(
-        public int $postId
+        public string $postId
     ) {}
 }
