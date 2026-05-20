@@ -6,12 +6,23 @@
 
 ## 🚀 Быстрый старт
 
-**1. Поднимаем контейнеры (PHP, Nginx, MySQL, Redis):**
+**1. Настройка переменных окружения:**
+Скопируйте конфигурационный файл-дистрибутив `.env.dist` в `.env`:
+```bash
+cp .env.dist .env
+```
+⚠️ **Важно:** Откройте созданный файл `.env` и убедитесь, что хосты баз данных настроены на имена сервисов Docker, а не локальные IP:
+* `DB_HOST=db` (вместо `172.20.0.1`)
+* `REDIS_HOST=redis` (вместо `172.20.0.1`)
+
+Без файла `.env` сборка Docker-контейнеров упадет с ошибкой интерполяции.
+
+**2. Поднимаем контейнеры (PHP, Nginx, MySQL, Redis):**
 ```bash
 docker compose up --build -d
 ```
 
-**2. Накатываем зависимости:**
+**3. Накатываем зависимости:**
 ```bash
 docker exec -it porno-php-1 composer install
 ```
@@ -62,6 +73,7 @@ docker exec -it porno-php-1 sass --watch public/assets/css/style.scss:public/ass
 
 > 🛠️ **Лайфхак:** Если при запуске тестов ругнётся Git (`fatal: detected dubious ownership`), просто выполни внутри контейнера:  
 > `git config --global --add safe.directory /var/www`
+
 ---
 
 ## ⚡ Кэширование (Redis)
@@ -82,6 +94,8 @@ docker exec -it porno-php-1 sass --watch public/assets/css/style.scss:public/ass
   ```
 
 > 🛠️ **Лайфхак:** В коде используется паттерн **«Декоратор»**. Бизнес-логика в `UseCase` ничего не знает о существовании Redis, что сохраняет код чистым. Если в админке обновляется пост или категория, кэш сбрасывается автоматически с помощью инвалидации тегов (`posts_list`, `categories_list`).
+
+---
 
 ## 🧹 Кодстайл
 

@@ -11,6 +11,9 @@ readonly class CachedHomePageIndexHandler implements HomePageIndexHandlerInterfa
 {
     private const int CACHE_TTL_SECONDS = 3600;
 
+    /**
+     * @param HomePageIndexHandler $delegate
+     */
     public function __construct(
         private HomePageIndexHandlerInterface $delegate,
         private CacheInterface                $cache

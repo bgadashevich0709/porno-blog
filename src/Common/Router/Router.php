@@ -8,6 +8,8 @@ use App\Common\Http\Context;
 use App\Common\Http\Request;
 use App\Common\Http\RequestDtoResolver;
 use App\Common\Router\Route\Route;
+use App\Common\Validator\Exception\ValidationException;
+use App\Exceptions\ResourceNotFoundException;
 use ReflectionClass;
 
 class Router
@@ -70,6 +72,11 @@ class Router
         ];
     }
 
+    /**
+     * @throws \ReflectionException
+     * @throws ResourceNotFoundException
+     * @throws ValidationException
+     */
     public function dispatch(Request $request): void
     {
         // Отрезаем от URL всё лишнее, оставляем только чистый путь (без знаков вопроса и GET-параметров)
@@ -163,9 +170,7 @@ class Router
             }
         }
 
-        // Если перебрали все роуты и ничего не подошло — отдаем честную 404 ошибку
-        http_response_code(404);
-        echo "404 - Страница не найдена";
+        throw new ResourceNotFoundException();
     }
 
     private function setResponseFormat(array $route): void
