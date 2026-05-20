@@ -13,10 +13,8 @@ class CategoryRequestDto implements PaginationRequestInterface
     public function __construct(
         public CategorySort $CategorySort = CategorySort::views,
         public SortWay $sortWay = SortWay::desc,
-
         #[AssertGE(1, message: "Номер страницы не может быть меньше 1")]
         public int $page = 1,
-
         #[AssertGE(1, message: "Количество элементов на странице не может быть меньше 1")]
         #[AssertLE(100, message: "Нельзя выводить более 100 элементов за раз")]
         public int $perPage = 12,

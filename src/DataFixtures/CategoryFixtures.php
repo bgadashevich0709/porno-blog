@@ -15,8 +15,8 @@ class CategoryFixtures implements FixtureInterface
 
         for ($i = 0; $i < 20; $i++) {
             $category = new Category();
-            $category->setName($faker->name);
-            $category->setDescription($faker->name);
+            $category->setName($faker->sentence(rand(1, 3)));
+            $category->setDescription($faker->text(rand(300, 400)));
 
             $manager->persist($category);
         }

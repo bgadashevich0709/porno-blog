@@ -23,11 +23,8 @@ readonly class HomePageIndexHandler implements HomePageIndexHandlerInterface
 
     public function getHomepageData(int $postsLimit = 3): HomepageDataDto
     {
-        $startTime = microtime(true);
-
         $categoriesRaw = $this->categoryRepository->findNonEmptyCategories();
         if (empty($categoriesRaw)) {
-            $this->logOutput($startTime);
             return new HomepageDataDto([]);
         }
 
@@ -79,8 +76,6 @@ readonly class HomePageIndexHandler implements HomePageIndexHandlerInterface
             }
         }
 
-        $this->logOutput($startTime);
-
         return new HomepageDataDto($categoryGroups);
     }
 
@@ -91,16 +86,5 @@ readonly class HomePageIndexHandler implements HomePageIndexHandlerInterface
         ]);
 
         return CategoryGroupDto::fromArray($catRow, $categoryPosts, $categoryUrl);
-    }
-
-    private function logOutput(float $startTime): void
-    {
-        $executionTimeMs = (microtime(true) - $startTime) * 1000;
-        echo sprintf(
-            '<div style="position: fixed; bottom: 10px; right: 10px; z-index: 9999; background: #111; color: #0f0; padding: 10px; border-radius: 5px; border: 1px solid #0f0; font-family: monospace; font-size: 14px;">' .
-            '[Финальный подход] Время генерации: <strong>%.2f мс</strong>' .
-            '</div>',
-            $executionTimeMs
-        );
     }
 }

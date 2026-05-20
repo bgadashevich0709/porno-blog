@@ -83,7 +83,7 @@ readonly class PostShowHandler
 
     private function getSimilarPosts(string $currentPostId, array $categoryIds, int $limit): array
     {
-        $rawSimilar = $this->postRepository->findLatestPostsForCategories($categoryIds, $limit + 1, 0);
+        $rawSimilar = $this->postRepository->findRelatedPostsByCategories($categoryIds, $limit + 1, 0);
 
         $filtered = array_filter($rawSimilar, static fn(array $row) => $row['id'] !== $currentPostId);
         $sliced = array_slice($filtered, 0, $limit);

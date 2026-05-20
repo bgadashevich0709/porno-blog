@@ -3,7 +3,6 @@
 namespace App\Repository;
 
 use App\Entity\Post;
-use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Exception;
 use Doctrine\DBAL\Query\QueryBuilder;
 use Doctrine\ORM\EntityManagerInterface;
@@ -34,8 +33,6 @@ class PostRepository extends EntityRepository implements PostRepositoryInterface
         ) as fast_ids ON p.id = fast_ids.id
         ORDER BY p.createdAt DESC, p.id DESC
         ";
-//        echo $sql;
-//        die();
 
         $rawRows = $db->fetchAllAssociative($sql);
 
@@ -63,7 +60,7 @@ class PostRepository extends EntityRepository implements PostRepositoryInterface
     /**
      * @throws Exception
      */
-    public function findLatestPostsForCategories(array $categoryIds, int $limit, int $offset = 0): array
+    public function findRelatedPostsByCategories(array $categoryIds, int $limit): array
     {
         if (empty($categoryIds)) {
             return [];
@@ -153,9 +150,6 @@ class PostRepository extends EntityRepository implements PostRepositoryInterface
         return $row;
     }
 
-    /**
-     * Запрос А: Выбирает ТОЛЬКО ID постов (для Late Row Lookup пагинации).
-     */
     public function getIdSubQueryBuilder(string $categoryId, string $sortField, string $sortWay): QueryBuilder
     {
         return $this->getEntityManager()->getConnection()->createQueryBuilder()
@@ -167,9 +161,6 @@ class PostRepository extends EntityRepository implements PostRepositoryInterface
             ->setParameter('category_id', $categoryId);
     }
 
-    /**
-     * НОВЫЙ МЕТОД: Быстро считает количество постов без тяжелых сортировок ORDER BY.
-     */
     public function getCountQueryBuilder(string $categoryId): QueryBuilder
     {
         return $this->getEntityManager()->getConnection()->createQueryBuilder()
@@ -180,9 +171,6 @@ class PostRepository extends EntityRepository implements PostRepositoryInterface
             ->setParameter('category_id', $categoryId);
     }
 
-    /**
-     * Запрос Б: Вытаскивает полные данные по нужным ID, исключая тяжелое поле content.
-     */
     public function getPostsByDataQueryBuilder(): QueryBuilder
     {
         return $this->getEntityManager()->getConnection()->createQueryBuilder()

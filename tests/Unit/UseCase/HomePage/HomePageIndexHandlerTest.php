@@ -41,11 +41,8 @@ class HomePageIndexHandlerTest extends TestCase
         $this->categoryRepository->method('findNonEmptyCategories')
             ->willReturn($categoriesRaw);
 
-        // 2. Имитируем единый пакет данных из БД (отсортированный по дате)
         $mockedLatestPosts = [
             [
-                // Пост принадлежит обеим категориям. Должен уйти в Tech (так как она первая в цикле),
-                // а в Design продублироваться НЕ должен.
                 'id' => '100', 'category_ids' => ['1', '2'], 'title' => 'Cross-category Post',
                 'description' => 'Desc 100', 'image' => 'img.jpg', 'views' => 10, 'createdAt' => '2026-01-01 10:03:00',
             ],
@@ -67,31 +64,24 @@ class HomePageIndexHandlerTest extends TestCase
             ],
         ];
 
-        // Мокаем новый метод репозитория (передаем 300 как дефолтный лимит пула)
         $this->postRepository->method('findLatestPostsWithCategories')
-            ->with(300)
             ->willReturn($mockedLatestPosts);
 
-        // 3. Вызываем хэндлер с лимитом 3 поста на категорию
         $result = $this->handler->getHomepageData(3);
 
-        // 4. Проверки результирующего DTO
         $this->assertInstanceOf(HomepageDataDto::class, $result);
 
         $categories = $result->categories;
         $this->assertCount(2, $categories);
 
-        // Проверяем категорию Tech (ID: 1) — должна забрать посты 100, 101, 102
         $this->assertEquals('1', $categories[0]->id);
         $this->assertCount(3, $categories[0]->latestPosts);
         $this->assertEquals('100', $categories[0]->latestPosts[0]->id);
         $this->assertEquals('101', $categories[0]->latestPosts[1]->id);
         $this->assertEquals('102', $categories[0]->latestPosts[2]->id);
 
-        // Проверяем категорию Design (ID: 2) — пост 100 должен быть исключен (дубликат),
-        // поэтому категория должна набрать посты 103 и 104.
         $this->assertEquals('2', $categories[1]->id);
-        $this->assertCount(2, $categories[1]->latestPosts); // Всего 2, так как уникальных постов больше не было
+        $this->assertCount(2, $categories[1]->latestPosts);
         $this->assertEquals('103', $categories[1]->latestPosts[0]->id);
         $this->assertEquals('104', $categories[1]->latestPosts[1]->id);
     }

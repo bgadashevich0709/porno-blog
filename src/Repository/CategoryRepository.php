@@ -3,7 +3,6 @@
 namespace App\Repository;
 
 use App\Entity\Category;
-use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 
@@ -30,13 +29,6 @@ class CategoryRepository extends EntityRepository implements CategoryRepositoryI
         return $this->getEntityManager()->getConnection()->fetchAllAssociative($sql);
     }
 
-    /**
-     * Получает данные категории по её ID в виде массива или null, если она не найдена.
-     *
-     * @param string $id UUID категории.
-     * @return array|null Ассоциативный массив с полями категории или null.
-     * @throws Exception
-     */
     public function getById(string $id): ?array
     {
         $row = $this->getEntityManager()->getConnection()->createQueryBuilder()

@@ -22,7 +22,7 @@ readonly class CachedHomePageIndexHandler implements HomePageIndexHandlerInterfa
 
         $cachedData = $this->cache->get($cacheKey);
         if ($cachedData instanceof HomepageDataDto) {
-           // return $cachedData;
+            return $cachedData;
         }
 
         $data = $this->delegate->getHomepageData($postsLimit);
