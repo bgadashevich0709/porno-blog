@@ -1,8 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Common\Config;
 
-class CacheConfig
+final class CacheConfig
 {
-
+    public static function getDriver(): string
+    {
+        return (string) Env::get('CACHE_DRIVER', 'redis');
+    }
 }

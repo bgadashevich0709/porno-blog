@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Common\Cache;
+namespace App\Common\Cache\Driver;
+
+use App\Common\Cache\CacheInterface;
 
 final class MemcachedCache implements CacheInterface
 {

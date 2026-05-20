@@ -5,12 +5,12 @@ namespace App\Controller;
 use App\Common\Controller\AbstractController;
 use App\Common\Middleware\LoggerMiddleware;
 use App\Common\Router\Route\Get;
-use App\UseCase\HomePage\HomePageIndexHandler;
+use App\UseCase\HomePage\Handler\HomePageIndexHandlerInterface;
 
 class IndexController extends AbstractController
 {
     public function __construct(
-        private readonly HomePageIndexHandler $homepageIndexHandler,
+        private readonly HomePageIndexHandlerInterface $homepageIndexHandler,
     ) {
         parent::__construct();
     }

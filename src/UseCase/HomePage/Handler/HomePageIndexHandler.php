@@ -1,6 +1,6 @@
 <?php
 
-namespace App\UseCase\HomePage;
+namespace App\UseCase\HomePage\Handler;
 
 use App\Application\Dto\CategoryGroupDto;
 use App\Application\Dto\PostListItemDto;
@@ -80,7 +80,6 @@ readonly class HomePageIndexHandler implements HomePageIndexHandlerInterface
 
         /** @var array<PostListItemDto> $allPostDtos */
         $allPostDtos = $this->mapPosts($rawPosts);
-
 
         // Распределяем посты по категориям
         foreach ($categoriesRaw as $catRow) {

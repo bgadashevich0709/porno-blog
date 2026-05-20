@@ -6,7 +6,7 @@ use App\Common\Router\UrlGenerator;
 use App\Repository\CategoryRepositoryInterface;
 use App\Repository\PostRepositoryInterface;
 use App\UseCase\HomePage\Dto\HomepageDataDto;
-use App\UseCase\HomePage\HomePageIndexHandler;
+use App\UseCase\HomePage\Handler\HomePageIndexHandler;
 use PHPUnit\Framework\TestCase;
 
 class HomePageIndexHandlerTest extends TestCase

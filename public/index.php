@@ -1,23 +1,31 @@
 <?php
 
+declare(strict_types=1);
+
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../cli-config.php';
 
+use App\Common\Cache\CacheFactory;
+use App\Common\Cache\CacheInterface;
 use App\Common\Container\Container;
 use App\Common\Exception\GlobalExceptionHandler;
 use App\Common\Http\Request;
 use App\Common\Middleware\GlobalSecurityMiddleware;
-use App\Common\Response\Startegy\SmartyStrategy;
 use App\Common\Router\Router;
 use App\Common\Router\UrlGenerator;
 use App\Common\Tracking\Storage\SessionVisitStorage;
 use App\Common\Tracking\VisitStorageInterface;
+use App\Repository\CategoryRepositoryInterface;
+use App\Repository\PostRepositoryInterface;
+use App\UseCase\HomePage\Handler\CachedHomePageIndexHandler;
+use App\UseCase\HomePage\Handler\HomePageIndexHandler;
+use App\UseCase\HomePage\Handler\HomePageIndexHandlerInterface;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 
 $container = new Container();
 
-$container->set(SmartyStrategy::class, static fn() => new SmartyStrategy());
+$container->set(CacheInterface::class, static fn() => CacheFactory::create());
 
 $exceptionHandler = new GlobalExceptionHandler();
 $exceptionHandler->register();
@@ -36,6 +44,19 @@ $router->addGlobalMiddleware(GlobalSecurityMiddleware::class);
 
 $compiledRoutes = $router->getRoutes();
 $container->set(UrlGenerator::class, static fn() => new UrlGenerator($compiledRoutes));
+
+$container->set(HomePageIndexHandlerInterface::class, static function() use ($container) {
+    $originalHandler = new HomePageIndexHandler(
+        $container->get(CategoryRepositoryInterface::class),
+        $container->get(PostRepositoryInterface::class),
+        $container->get(UrlGenerator::class)
+    );
+
+    return new CachedHomePageIndexHandler(
+        $originalHandler,
+        $container->get(CacheInterface::class)
+    );
+});
 
 $request = Request::createFromGlobals();
 
