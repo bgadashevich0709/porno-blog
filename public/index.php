@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../cli-config.php';
 
+use App\Application\Service\PostDtoFactory;
 use App\Common\Cache\CacheFactory;
 use App\Common\Cache\CacheInterface;
 use App\Common\Container\Container;
@@ -53,7 +54,8 @@ $container->set(HomePageIndexHandlerInterface::class, static function() use ($co
     $originalHandler = new HomePageIndexHandler(
         $container->get(CategoryRepositoryInterface::class),
         $container->get(PostRepositoryInterface::class),
-        $container->get(UrlGenerator::class)
+        $container->get(UrlGenerator::class),
+        $container->get(PostDtoFactory::class)
     );
 
     return new CachedHomePageIndexHandler(

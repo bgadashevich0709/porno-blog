@@ -10,6 +10,7 @@ use App\Application\Dto\LimitControlDto;
 use App\Application\Dto\SortPanelDto;
 use App\Application\Enum\CategorySort;
 use App\Application\Enum\SortWay;
+use App\Application\Service\PostDtoFactory;
 use App\Common\Pagination\AbstractIdBasedPaginatedHandler;
 use App\Common\Pagination\PaginationRequestInterface;
 use App\Common\Router\UrlGenerator;
@@ -21,6 +22,7 @@ use App\Repository\PostRepositoryInterface;
 use App\Traits\PostMapper;
 use App\UseCase\Controller\Category\Dto\CategoryDataDto;
 use App\UseCase\Controller\Category\Dto\CategoryRequestDto;
+use Doctrine\DBAL\Exception;
 use Doctrine\DBAL\ParameterType;
 
 class CategoryShowHandler extends AbstractIdBasedPaginatedHandler
@@ -30,12 +32,13 @@ class CategoryShowHandler extends AbstractIdBasedPaginatedHandler
     public function __construct(
         private readonly CategoryRepositoryInterface $categoryRepository,
         private readonly PostRepositoryInterface     $postRepository,
-        protected readonly UrlGenerator              $urlGenerator
+        protected readonly UrlGenerator              $urlGenerator,
+        protected readonly PostDtoFactory $postDtoFactory
     ) {}
 
     /**
      * @throws ResourceNotFoundException
-     * @throws \Doctrine\DBAL\Exception
+     * @throws Exception
      */
     public function getCategoryShowData(string $categoryId, CategoryRequestDto $requestDto): CategoryDataDto
     {
@@ -94,7 +97,7 @@ class CategoryShowHandler extends AbstractIdBasedPaginatedHandler
     }
 
     /**
-     * @throws \Doctrine\DBAL\Exception
+     * @throws Exception
      */
     public function getTotalCount(array $context): int
     {
@@ -104,7 +107,7 @@ class CategoryShowHandler extends AbstractIdBasedPaginatedHandler
     }
 
     /**
-     * @throws \Doctrine\DBAL\Exception
+     * @throws Exception
      */
     public function fetchIds(int $offset, int $perPage, PaginationRequestInterface $requestDto, array $context): array
     {
@@ -121,7 +124,7 @@ class CategoryShowHandler extends AbstractIdBasedPaginatedHandler
     }
 
     /**
-     * @throws \Doctrine\DBAL\Exception
+     * @throws Exception
      */
     public function fetchFullRowsByIds(array $idList, array $context): array
     {
@@ -153,7 +156,7 @@ class CategoryShowHandler extends AbstractIdBasedPaginatedHandler
 
     /**
      * @throws ResourceNotFoundException
-     * @throws \Doctrine\DBAL\Exception
+     * @throws Exception
      */
     private function loadCategory(string $categoryId): CategoryDto
     {

@@ -12,14 +12,17 @@ class PostDto
 {
     use DateTimeParserTrait;
 
-    public int $viewsCount {
-        set {
-            if ($value < 0) {
-                throw new InvalidArgumentException("Просмотры не могут быть отрицательными");
-            }
-            $this->viewsCount = $value;
-        }
-    }
+    // Временно закомментировано для PHP 8.3
+    // public int $viewsCount {
+    //     set {
+    //         if ($value < 0) {
+    //             throw new InvalidArgumentException("Просмотры не могут быть отрицательными");
+    //         }
+    //         $this->viewsCount = $value;
+    //     }
+    // }
+
+    public int $viewsCount;
 
     /**
      * @param array<string> $categoryIds Массив строк (UUID) категорий
@@ -34,6 +37,10 @@ class PostDto
         int $viewsCount,
         public \DateTimeImmutable $createdAt
     ) {
+        // Временная валидация для PHP 8.3 вместо хука свойства
+        if ($viewsCount < 0) {
+            throw new InvalidArgumentException("Просмотры не могут быть отрицательными");
+        }
         $this->viewsCount = $viewsCount;
     }
 

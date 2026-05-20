@@ -4,6 +4,7 @@ namespace App\UseCase\Controller\Post;
 
 use App\Application\Dto\BreadcrumbItemDto;
 use App\Application\Dto\PostDto;
+use App\Application\Service\PostDtoFactory;
 use App\Common\Event\EventDispatcher;
 use App\Common\Router\UrlGenerator;
 use App\Common\Tracking\PageViewTracker;
@@ -23,7 +24,8 @@ readonly class PostShowHandler
         private PostRepositoryInterface $postRepository,
         private UrlGenerator            $urlGenerator,
         private PageViewTracker         $pageViewTracker,
-        private EventDispatcher         $dispatcher
+        private EventDispatcher         $dispatcher,
+        private PostDtoFactory        $postDtoFactory,
     ) {}
 
     /**
@@ -58,6 +60,7 @@ readonly class PostShowHandler
 
     /**
      * @throws ResourceNotFoundException
+     * @throws Exception
      */
     private function getPostOrThrow(string $id): PostDto
     {
@@ -67,7 +70,7 @@ readonly class PostShowHandler
             throw new ResourceNotFoundException("Пост с ID '{$id}' не найден.");
         }
 
-        return PostDto::fromArray($rawPost);
+        return $this->postDtoFactory->createPostDto($rawPost);
     }
 
     private function buildBreadcrumbs(PostDto $postDto): array

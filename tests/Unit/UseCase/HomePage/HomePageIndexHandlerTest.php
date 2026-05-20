@@ -23,16 +23,22 @@ class HomePageIndexHandlerTest extends TestCase
 
         $urlGenerator->method($this->anything())->willReturn('/some-url');
 
+        $imageService = $this->createMock(\App\Application\Service\ImageService::class);
+        $imageService->method('getUrl')->willReturnCallback(function (?string $imageUrl) {
+            return $imageUrl ?? '/images/placeholders/blog-list-default.jpg';
+        });
+        $postDtoFactory = new \App\Application\Service\PostDtoFactory($imageService);
+
         $this->handler = new HomePageIndexHandler(
             $this->categoryRepository,
             $this->postRepository,
-            $urlGenerator
+            $urlGenerator,
+            $postDtoFactory
         );
     }
 
     public function testGetHomepageDataDistributesPostsWithoutDuplicates(): void
     {
-        // 1. Настраиваем категории
         $categoriesRaw = [
             ['id' => '1', 'name' => 'Tech'],
             ['id' => '2', 'name' => 'Design'],

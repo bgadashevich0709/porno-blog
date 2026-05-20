@@ -4,6 +4,7 @@ namespace App\UseCase\Controller\HomePage\Handler;
 
 use App\Application\Dto\CategoryGroupDto;
 use App\Application\Dto\PostListItemDto;
+use App\Application\Service\PostDtoFactory;
 use App\Common\Router\UrlGenerator;
 use App\Controller\CategoryController;
 use App\Repository\CategoryRepositoryInterface;
@@ -18,7 +19,8 @@ readonly class HomePageIndexHandler implements HomePageIndexHandlerInterface
     public function __construct(
         private CategoryRepositoryInterface $categoryRepository,
         private PostRepositoryInterface     $postRepository,
-        private UrlGenerator                $urlGenerator
+        private UrlGenerator                $urlGenerator,
+        protected PostDtoFactory $postDtoFactory
     ) {}
 
     public function getHomepageData(int $postsLimit = 3): HomepageDataDto
