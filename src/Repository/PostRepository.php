@@ -19,42 +19,97 @@ class PostRepository extends EntityRepository implements PostRepositoryInterface
         parent::__construct($em, $em->getClassMetadata(Post::class));
     }
 
+    public function findLatestPostsWithCategories(int $globalLimit = 300): array
+    {
+        $db = $this->getEntityManager()->getConnection();
+
+        $sql = "
+        SELECT p.id, p.title, p.description, p.image, p.views, p.createdAt
+        FROM posts p
+        INNER JOIN (
+            SELECT id 
+            FROM posts 
+            ORDER BY createdAt DESC, id DESC 
+            LIMIT {$globalLimit}
+        ) as fast_ids ON p.id = fast_ids.id
+        ORDER BY p.createdAt DESC, p.id DESC
+        ";
+//        echo $sql;
+//        die();
+
+        $rawRows = $db->fetchAllAssociative($sql);
+
+        if (empty($rawRows)) {
+            return [];
+        }
+
+        $postIds = array_column($rawRows, 'id');
+        $escapedPostIds = implode(',', array_map([$db, 'quote'], $postIds));
+
+        $relationsSql = "SELECT post_id, category_id FROM post_category WHERE post_id IN ({$escapedPostIds})";
+        $relations = $db->fetchAllAssociative($relationsSql);
+
+        $categoriesMap = [];
+        foreach ($relations as $rel) {
+            $categoriesMap[$rel['post_id']][] = $rel['category_id'];
+        }
+
+        return array_map(function (array $row) use ($categoriesMap) {
+            $row['category_ids'] = $categoriesMap[$row['id']] ?? [];
+            return $row;
+        }, $rawRows);
+    }
+
     /**
      * @throws Exception
      */
     public function findLatestPostsForCategories(array $categoryIds, int $limit, int $offset = 0): array
     {
-        $sql = "
-            WITH RankedPosts AS (
-                SELECT 
-                    p.id, 
-                    p.title, 
-                    p.description, 
-                    p.image, 
-                    p.views,
-                    p.createdAt, -- Добавили в CTE
-                    pc.category_id,
-                    (
-                        SELECT GROUP_CONCAT(sub_pc.category_id) 
-                        FROM post_category sub_pc 
-                        WHERE sub_pc.post_id = p.id
-                    ) as category_ids,
-                    ROW_NUMBER() OVER(PARTITION BY pc.category_id ORDER BY p.createdAt DESC) as rn
-                FROM posts p
-                INNER JOIN post_category pc ON p.id = pc.post_id
-                WHERE pc.category_id IN (:categoryIds)
-            )
-            SELECT id, title, description, image, views, category_ids, createdAt -- Выбираем для DTO
-            FROM RankedPosts 
-            WHERE rn > :offset AND rn <= (:offset + :limit)
+        if (empty($categoryIds)) {
+            return [];
+        }
+
+        $connection = $this->getEntityManager()->getConnection();
+        $safeLimit = (int) $limit;
+
+        $sqlIds = "
+            SELECT DISTINCT pc.post_id
+            FROM post_category pc
+            WHERE pc.category_id IN (:categoryIds)
+            LIMIT {$safeLimit}
         ";
 
-        $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative($sql, [
+        $targetRows = $connection->fetchAllAssociative($sqlIds, [
             'categoryIds' => $categoryIds,
-            'offset' => $offset,
-            'limit' => $limit,
         ], [
-            'categoryIds' => ArrayParameterType::STRING,
+            'categoryIds' => \Doctrine\DBAL\ArrayParameterType::STRING,
+        ]);
+
+        if (empty($targetRows)) {
+            return [];
+        }
+
+        $postIds = array_column($targetRows, 'post_id');
+
+        $finalSql = "
+            SELECT 
+                p.id, 
+                p.title, 
+                p.description, 
+                p.image, 
+                p.views,
+                p.createdAt,
+                GROUP_CONCAT(pc.category_id) as category_ids
+            FROM posts p
+            INNER JOIN post_category pc ON p.id = pc.post_id
+            WHERE p.id IN (:postIds)
+            GROUP BY p.id, p.title, p.description, p.image, p.views, p.createdAt
+        ";
+
+        $rows = $connection->fetchAllAssociative($finalSql, [
+            'postIds' => $postIds,
+        ], [
+            'postIds' => \Doctrine\DBAL\ArrayParameterType::STRING,
         ]);
 
         return array_map(function (array $row) {
@@ -65,7 +120,6 @@ class PostRepository extends EntityRepository implements PostRepositoryInterface
             return $row;
         }, $rows);
     }
-
 
     /**
      * @throws Exception

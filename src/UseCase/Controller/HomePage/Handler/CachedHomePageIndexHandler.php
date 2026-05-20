@@ -9,6 +9,8 @@ use App\UseCase\Controller\HomePage\Dto\HomepageDataDto;
 
 readonly class CachedHomePageIndexHandler implements HomePageIndexHandlerInterface
 {
+    private const int CACHE_TTL_SECONDS = 3600;
+
     public function __construct(
         private HomePageIndexHandlerInterface $delegate,
         private CacheInterface                $cache
@@ -20,7 +22,7 @@ readonly class CachedHomePageIndexHandler implements HomePageIndexHandlerInterfa
 
         $cachedData = $this->cache->get($cacheKey);
         if ($cachedData instanceof HomepageDataDto) {
-            return $cachedData;
+           // return $cachedData;
         }
 
         $data = $this->delegate->getHomepageData($postsLimit);
@@ -28,7 +30,7 @@ readonly class CachedHomePageIndexHandler implements HomePageIndexHandlerInterfa
         $this->cache->set(
             $cacheKey,
             $data,
-            86400,
+            self::CACHE_TTL_SECONDS,
             ['posts_list', 'categories_list']
         );
 

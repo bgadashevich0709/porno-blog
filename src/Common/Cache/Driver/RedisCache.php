@@ -70,9 +70,6 @@ final class RedisCache implements CacheInterface
         return true;
     }
 
-    /**
-     * Итеративно находит и удаляет ключи по маске, не блокируя поток Redis (в отличие от KEYS)
-     */
     private function clearPattern(string $pattern): void
     {
         $cursor = '0';

@@ -1,6 +1,7 @@
 <?php
 
 use App\DataFixtures\CategoryFixtures;
+use App\DataFixtures\CategoryRelationFixtures;
 use App\DataFixtures\PostFixtures;
 use Doctrine\Common\DataFixtures\Executor\ORMExecutor;
 use Doctrine\Common\DataFixtures\Loader;
@@ -13,6 +14,7 @@ $entityManager = getEntityManager();
 $loader = new Loader();
 $loader->addFixture(new CategoryFixtures());
 $loader->addFixture(new PostFixtures());
+$loader->addFixture(new CategoryRelationFixtures());
 
 $purger = new ORMPurger();
 $executor = new ORMExecutor($entityManager, $purger);

@@ -1,7 +1,5 @@
 <?php
 
-// src/DataFixtures/CategoryFixtures.php
-
 namespace App\DataFixtures;
 
 use App\Entity\Category;

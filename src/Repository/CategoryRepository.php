@@ -14,18 +14,20 @@ class CategoryRepository extends EntityRepository implements CategoryRepositoryI
         parent::__construct($em, $em->getClassMetadata(Category::class));
     }
 
-    /**
-     * @return array
-     * @throws Exception
-     */
     public function findNonEmptyCategories(): array
     {
-        return  $this->getEntityManager()->getConnection()->createQueryBuilder()
-            ->select('DISTINCT c.id', 'c.name')
-            ->from('categories', 'c')
-            ->innerJoin('c', 'post_category', 'pc', 'c.id = pc.category_id')
-            ->orderBy('c.name', 'ASC')
-            ->fetchAllAssociative();
+        $sql = "
+            SELECT c.id, c.name 
+            FROM categories c
+            WHERE EXISTS (
+                SELECT 1 
+                FROM post_category pc 
+                WHERE pc.category_id = c.id
+            )
+            ORDER BY c.name ASC
+        ";
+
+        return $this->getEntityManager()->getConnection()->fetchAllAssociative($sql);
     }
 
     /**
