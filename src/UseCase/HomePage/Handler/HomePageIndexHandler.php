@@ -12,7 +12,7 @@ use App\Traits\PostMapper;
 use App\UseCase\HomePage\Dto\HomepageDataDto;
 use Doctrine\DBAL\Exception;
 
-readonly class HomePageIndexHandler
+readonly class HomePageIndexHandler implements HomePageIndexHandlerInterface
 {
     use PostMapper;
 
