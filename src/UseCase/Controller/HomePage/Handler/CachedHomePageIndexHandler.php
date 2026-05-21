@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\UseCase\Controller\HomePage\Handler;
 
 use App\Common\Cache\CacheInterface;
+use App\Common\Debug\CacheProfiler;
 use App\UseCase\Controller\HomePage\Dto\HomepageDataDto;
 
 readonly class CachedHomePageIndexHandler implements HomePageIndexHandlerInterface
@@ -27,6 +28,8 @@ readonly class CachedHomePageIndexHandler implements HomePageIndexHandlerInterfa
         if ($cachedData instanceof HomepageDataDto) {
             return $cachedData;
         }
+
+        CacheProfiler::logHit(false);
 
         $data = $this->delegate->getHomepageData($postsLimit);
 

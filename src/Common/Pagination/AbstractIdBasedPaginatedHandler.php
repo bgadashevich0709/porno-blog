@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Common\Pagination;
 
 use App\Common\Cache\CacheInterface;
+use App\Common\Debug\CacheProfiler;
 use App\Common\Pagination\Dto\PaginateDto;
 use App\Common\Router\UrlGenerator;
 
@@ -25,6 +26,8 @@ abstract class AbstractIdBasedPaginatedHandler
     protected function paginate(PaginationRequestInterface $requestDto, array $context = []): array
     {
         if (!$this->isCacheEnabled($context)) {
+            CacheProfiler::logHit(false);
+
             return $this->executePaginationQuery($requestDto, $context);
         }
 
@@ -45,6 +48,8 @@ abstract class AbstractIdBasedPaginatedHandler
         $paginationResult = $this->cache->get($cacheKey);
 
         if (!is_array($paginationResult)) {
+            CacheProfiler::logHit(false);
+
             $paginationResult = $this->executePaginationQuery($requestDto, $context);
 
             $this->cache->set(
@@ -53,10 +58,13 @@ abstract class AbstractIdBasedPaginatedHandler
                 $this->getCacheTtl($context),
                 $this->getCacheTags($context)
             );
+        } else {
+            CacheProfiler::logHit(true);
         }
 
         return $paginationResult;
     }
+
 
     /**
      * Создает генератор URL для постраничной навигации.

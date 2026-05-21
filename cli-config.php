@@ -38,16 +38,20 @@ function getEntityManager(): EntityManager
     $connection->getDatabasePlatform()->registerDoctrineTypeMapping('uuid', 'uuid');
 
     try {
-        $profilingConnection = new ProfilingConnection(
-            $connection->getParams(),
-            $connection->getDriver(),
-            $connection->getConfiguration()
-        );
+        // Профайлер нужен только для веб-запросов. В CLI (миграции, фикстуры) отключаем его,
+        // чтобы избежать блокировок таблиц и конфликтов с вложенными транзакциями.
+        if (PHP_SAPI !== 'cli') {
+            $profilingConnection = new ProfilingConnection(
+                $connection->getParams(),
+                $connection->getDriver(),
+                $connection->getConfiguration()
+            );
 
-        $profilingConnection->setOriginalConnection($connection);
-        $connection = $profilingConnection;
+            $profilingConnection->setOriginalConnection($connection);
+            $connection = $profilingConnection;
+        }
     } catch (\Throwable $e) {
-        // Если при передаче параметров возникли проблемы, безопасно откатываемся к оригиналу
+        // Если при инициализации профайлера возникли проблемы, безопасно откатываемся к оригиналу
     }
 
     return new EntityManager($connection, $ormConfig);
