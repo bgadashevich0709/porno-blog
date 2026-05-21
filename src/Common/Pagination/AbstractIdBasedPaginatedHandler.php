@@ -4,52 +4,57 @@ declare(strict_types=1);
 
 namespace App\Common\Pagination;
 
+use App\Common\Cache\CacheInterface;
 use App\Common\Pagination\Dto\PaginateDto;
+use App\Common\Router\UrlGenerator;
 
 /**
  * Архитектурный паттерн: Шаблонный метод (Template Method).
- *
- * ЭТОТ КЛАСС ОТВЕЧАЕТ ЗА СВЕРХБЫСТРУЮ ПАГИНАЦИЮ НА МИЛЛИОНАХ СТРОК (Паттерн Late Row Lookup).
+ * Отвечает за высокопроизводительную пагинацию и автоматическое кэширование результатов.
  */
 abstract class AbstractIdBasedPaginatedHandler
 {
+    public function __construct(
+        protected readonly UrlGenerator $urlGenerator,
+        private readonly CacheInterface $cache
+    ) {}
+
     /**
-     * Основной скелет алгоритма высокопроизводительной пагинации.
-     * Теперь принимает строго PaginationRequestInterface и полностью независим от категорий.
+     * Основной скелет алгоритма пагинации с поддержкой точечного кэширования.
      */
     protected function paginate(PaginationRequestInterface $requestDto, array $context = []): array
     {
-        // 1. Получаем общее количество записей
-        $totalItems = $this->getTotalCount($context);
-        $totalPages = (int) ceil($totalItems / $requestDto->getPerPage());
-
-        if ($totalItems === 0) {
-            return [
-                'postsData' => new PaginateDto([], $requestDto->getPage(), $requestDto->getPerPage(), 0, 0),
-                'pager' => new Pager($this->createUrlGenerator($context), $requestDto->getPerPage()),
-            ];
+        if (!$this->isCacheEnabled($context)) {
+            return $this->executePaginationQuery($requestDto, $context);
         }
 
-        // 2. ШАГ А: Извлекаем плоский список только ID постов/продуктов/пользователей
-        $offset = max(0, ($requestDto->getPage() - 1) * $requestDto->getPerPage());
-
-        // Передаем интерфейс в fetchIds
-        $idList = $this->fetchIds($offset, $requestDto->getPerPage(), $requestDto, $context);
-
-        // 3. ШАГ Б: Вытягиваем полные строки только по найденным ID
-        $rows = $this->fetchFullRowsByIds($idList, $context);
-
-        // 4. Гидрируем сырые строки в конечные DTO
-        $mappedItems = $this->mapRowsToDto($rows);
-
-        // 5. Собираем структуры пагинации
-        $postsData = new PaginateDto($mappedItems, $requestDto->getPage(), $requestDto->getPerPage(), $totalItems, $totalPages);
-        $pager = new Pager($this->createUrlGenerator($context), $requestDto->getPerPage());
-
-        return [
-            'postsData' => $postsData,
-            'pager' => $pager,
+        $signatureData = [
+            'request'      => $requestDto->toArray(),
+            'route_params' => $context['route_params'] ?? [],
         ];
+
+        $signature = md5(serialize($signatureData));
+
+        $cacheKey = sprintf(
+            '%s_res_%s',
+            $context['cache_prefix'] ?? strtolower(basename(str_replace('\\', '/', static::class))),
+            $signature
+        );
+
+        $paginationResult = $this->cache->get($cacheKey);
+
+        if (!is_array($paginationResult)) {
+            $paginationResult = $this->executePaginationQuery($requestDto, $context);
+
+            $this->cache->set(
+                $cacheKey,
+                $paginationResult,
+                $this->getCacheTtl($context),
+                $this->getCacheTags($context)
+            );
+        }
+
+        return $paginationResult;
     }
 
     /**
@@ -83,10 +88,50 @@ abstract class AbstractIdBasedPaginatedHandler
         );
     }
 
-    abstract public function getTotalCount(array $context): int;
+    protected function isCacheEnabled(array $context): bool
+    {
+        return true;
+    }
 
-    abstract public function fetchIds(int $offset, int $perPage, PaginationRequestInterface $requestDto, array $context): array;
+    protected function getCacheTtl(array $context): int
+    {
+        return 300;
+    }
 
-    abstract public function fetchFullRowsByIds(array $idList, array $context): array;
-    abstract public function mapRowsToDto(array $rows): array;
+    protected function getCacheTags(array $context): array
+    {
+        return ['posts_list'];
+    }
+
+    // ИЗМЕНЕНО: Шаги алгоритма скрыты под protected для соблюдения инкапсуляции
+    abstract protected function getTotalCount(array $context): int;
+    abstract protected function fetchIds(int $offset, int $perPage, PaginationRequestInterface $requestDto, array $context): array;
+    abstract protected function fetchFullRowsByIds(array $idList, array $context): array;
+    abstract protected function mapRowsToDto(array $rows): array;
+
+    /**
+     * Чистая логика выполнения запросов пагинации к СУБД.
+     */
+    private function executePaginationQuery(PaginationRequestInterface $requestDto, array $context): array
+    {
+        $totalItems = $this->getTotalCount($context);
+        $totalPages = (int) ceil($totalItems / $requestDto->getPerPage());
+
+        if ($totalItems === 0) {
+            return [
+                'postsData' => new PaginateDto([], $requestDto->getPage(), $requestDto->getPerPage(), 0, 0),
+                'pager' => new Pager($this->createUrlGenerator($context), $requestDto->getPerPage()),
+            ];
+        }
+
+        $offset = max(0, ($requestDto->getPage() - 1) * $requestDto->getPerPage());
+        $idList = $this->fetchIds($offset, $requestDto->getPerPage(), $requestDto, $context);
+        $rows = $this->fetchFullRowsByIds($idList, $context);
+        $mappedItems = $this->mapRowsToDto($rows);
+
+        return [
+            'postsData' => new PaginateDto($mappedItems, $requestDto->getPage(), $requestDto->getPerPage(), $totalItems, $totalPages),
+            'pager' => new Pager($this->createUrlGenerator($context), $requestDto->getPerPage()),
+        ];
+    }
 }
