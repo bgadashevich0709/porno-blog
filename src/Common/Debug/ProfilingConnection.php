@@ -40,9 +40,6 @@ class ProfilingConnection extends \Doctrine\DBAL\Connection
         return $result;
     }
 
-    // Переопределяем базовые методы получения платформы, драйвера и параметров,
-    // чтобы QueryBuilder читал их из оригинального, полностью инициализированного объекта
-
     public function getDatabasePlatform(): \Doctrine\DBAL\Platforms\AbstractPlatform
     {
         return $this->originalConnection->getDatabasePlatform();
@@ -68,9 +65,6 @@ class ProfilingConnection extends \Doctrine\DBAL\Connection
         return $this->originalConnection->isConnected();
     }
 
-    /**
-     * Перехватчик для транзакций и остальных скрытых системных методов
-     */
     public function __call(string $method, array $args): mixed
     {
         return $this->originalConnection->{$method}(...$args);
