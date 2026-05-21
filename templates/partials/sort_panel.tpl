@@ -30,12 +30,6 @@
                     {/foreach}
                 </select>
             </div>
-
-            <div style="margin-top: auto; margin-left: auto;">
-                <a href="{$smarty.server.SCRIPT_NAME|escape}" style="color: #666; text-decoration: none; font-size: 0.9rem; border: 1px solid #ccc; padding: 8px 12px; border-radius: 4px; background: #f5f5f5; display: inline-block;">
-                    Сбросить
-                </a>
-            </div>
         </form>
     </div>
 {/if}
