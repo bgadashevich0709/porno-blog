@@ -30,6 +30,7 @@ abstract class AbstractIdBasedPaginatedHandler
 
         $signatureData = [
             'request'      => $requestDto->toArray(),
+            'route_method' => $context['route_method'] ?? 'show',
             'route_params' => $context['route_params'] ?? [],
         ];
 
