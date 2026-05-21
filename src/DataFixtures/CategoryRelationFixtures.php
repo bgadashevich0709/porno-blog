@@ -10,6 +10,8 @@ class CategoryRelationFixtures implements FixtureInterface
 {
     public function load(ObjectManager $manager): void
     {
+        set_time_limit(0);
+
         $globalStartTime = microtime(true);
         $output = new ConsoleOutput();
 

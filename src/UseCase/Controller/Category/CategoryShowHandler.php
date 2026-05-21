@@ -11,6 +11,7 @@ use App\Application\Dto\SortPanelDto;
 use App\Application\Enum\CategorySort;
 use App\Application\Enum\SortWay;
 use App\Application\Service\PostDtoFactory;
+use App\Common\Cache\CacheInterface;
 use App\Common\Pagination\AbstractIdBasedPaginatedHandler;
 use App\Common\Pagination\PaginationRequestInterface;
 use App\Common\Router\UrlGenerator;
@@ -22,7 +23,6 @@ use App\Repository\PostRepositoryInterface;
 use App\Traits\PostMapper;
 use App\UseCase\Controller\Category\Dto\CategoryDataDto;
 use App\UseCase\Controller\Category\Dto\CategoryRequestDto;
-use Doctrine\DBAL\Exception;
 use Doctrine\DBAL\ParameterType;
 
 class CategoryShowHandler extends AbstractIdBasedPaginatedHandler
@@ -33,17 +33,30 @@ class CategoryShowHandler extends AbstractIdBasedPaginatedHandler
         private readonly CategoryRepositoryInterface $categoryRepository,
         private readonly PostRepositoryInterface     $postRepository,
         protected readonly UrlGenerator              $urlGenerator,
-        protected readonly PostDtoFactory $postDtoFactory
+        protected readonly PostDtoFactory            $postDtoFactory,
+        private readonly CacheInterface              $cache
     ) {}
 
     /**
      * @throws ResourceNotFoundException
-     * @throws Exception
      */
     public function getCategoryShowData(string $categoryId, CategoryRequestDto $requestDto): CategoryDataDto
     {
         $category = $this->loadCategory($categoryId);
-        $paginationResult = $this->paginateCategoryPosts($categoryId, $requestDto);
+        $cacheKey = $this->generateCacheKey($categoryId, $requestDto);
+
+        $paginationResult = $this->cache->get($cacheKey);
+
+        if (!is_array($paginationResult)) {
+            $paginationResult = $this->paginateCategoryPosts($categoryId, $requestDto);
+
+            $this->cache->set(
+                $cacheKey,
+                $paginationResult,
+                300,
+                ['posts_list', "category_{$categoryId}_posts"]
+            );
+        }
 
         return new CategoryDataDto(
             category: $category,
@@ -52,6 +65,18 @@ class CategoryShowHandler extends AbstractIdBasedPaginatedHandler
             breadcrumbs: $this->buildBreadcrumbs($category->title),
             sortPanel: $this->buildSortPanel($requestDto),
             limitControl: $this->buildLimitControl($requestDto->perPage)
+        );
+    }
+
+    private function generateCacheKey(string $categoryId, CategoryRequestDto $requestDto): string
+    {
+        return sprintf(
+            'category_pagination_res_%s_p_%d_per_%d_sort_%s_way_%s',
+            $categoryId,
+            $requestDto->page ?? 1,
+            $requestDto->perPage,
+            $requestDto->CategorySort->name ?? 'default',
+            $requestDto->sortWay->name ?? 'desc'
         );
     }
 
@@ -69,10 +94,7 @@ class CategoryShowHandler extends AbstractIdBasedPaginatedHandler
     private function buildBreadcrumbs(string $categoryTitle): array
     {
         return [
-            new BreadcrumbItemDto(
-                'Главная',
-                $this->urlGenerator->generate(IndexController::class, 'index')
-            ),
+            new BreadcrumbItemDto('Главная', $this->urlGenerator->generate(IndexController::class, 'index')),
             new BreadcrumbItemDto($categoryTitle),
         ];
     }
@@ -90,25 +112,15 @@ class CategoryShowHandler extends AbstractIdBasedPaginatedHandler
 
     private function buildLimitControl(int $perPage): LimitControlDto
     {
-        return new LimitControlDto(
-            options: [12, 24, 36],
-            current: $perPage
-        );
+        return new LimitControlDto(options: [12, 24, 36], current: $perPage);
     }
 
-    /**
-     * @throws Exception
-     */
     public function getTotalCount(array $context): int
     {
         $countQb = $this->postRepository->getCountQueryBuilder($context['categoryId']);
-
         return (int) $countQb->executeQuery()->fetchOne();
     }
 
-    /**
-     * @throws Exception
-     */
     public function fetchIds(int $offset, int $perPage, PaginationRequestInterface $requestDto, array $context): array
     {
         $idQb = $this->postRepository->getIdSubQueryBuilder(
@@ -117,15 +129,9 @@ class CategoryShowHandler extends AbstractIdBasedPaginatedHandler
             sortWay: $requestDto->getSortWay()
         );
 
-        return $idQb->setFirstResult($offset)
-            ->setMaxResults($perPage)
-            ->executeQuery()
-            ->fetchFirstColumn();
+        return $idQb->setFirstResult($offset)->setMaxResults($perPage)->executeQuery()->fetchFirstColumn();
     }
 
-    /**
-     * @throws Exception
-     */
     public function fetchFullRowsByIds(array $idList, array $context): array
     {
         if (empty($idList)) {
@@ -154,10 +160,6 @@ class CategoryShowHandler extends AbstractIdBasedPaginatedHandler
         return $this->mapPosts($rows);
     }
 
-    /**
-     * @throws ResourceNotFoundException
-     * @throws Exception
-     */
     private function loadCategory(string $categoryId): CategoryDto
     {
         $categoryArr = $this->categoryRepository->getById($categoryId);

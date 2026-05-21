@@ -52,36 +52,35 @@ abstract class AbstractIdBasedPaginatedHandler
         ];
     }
 
-    protected function createUrlGenerator(array $context): \Closure
+    /**
+     * Создает генератор URL для постраничной навигации.
+     *
+     * Использование объекта PagerUrlGenerator вместо \Closure необходимо
+     * для успешной сериализации данных пагинации при сохранении в кеш (Redis).
+     */
+    protected function createUrlGenerator(array $context): PagerUrlGenerator
     {
-        /** @var PaginationRequestInterface $requestDto */
         $requestDto = $context['requestDto'] ?? null;
-
         if (!$requestDto instanceof PaginationRequestInterface) {
             throw new \InvalidArgumentException('Context must contain an instance of PaginationRequestInterface.');
         }
 
-        $controller = $context['route_controller'] ?? throw new \InvalidArgumentException('Missing "route_controller" in context.');
-        $method = $context['route_method'] ?? 'show';
-        $routeParams = $context['route_params'] ?? [];
-
         $queryParams = $requestDto->toArray();
-
         foreach ($queryParams as $key => $value) {
-            if ($value instanceof \BackedEnum) {
-                $queryParams[$key] = $value->value;
-            } elseif (is_object($value)) {
-                $queryParams[$key] = $value->name ?? (string) $value;
-            }
+            $queryParams[$key] = match (true) {
+                $value instanceof \BackedEnum => $value->value,
+                is_object($value) => $value->name ?? (string) $value,
+                default => $value,
+            };
         }
 
-        $urlGenerator = $this->urlGenerator;
-
-        return static function (int $pageNumber) use ($urlGenerator, $controller, $method, $routeParams, $queryParams): string {
-            $queryParams['page'] = $pageNumber;
-
-            return $urlGenerator->generate($controller, $method, array_merge($routeParams, $queryParams));
-        };
+        return new PagerUrlGenerator(
+            $this->urlGenerator,
+            $context['route_controller'] ?? throw new \InvalidArgumentException('Missing "route_controller"'),
+            $context['route_method'] ?? 'show',
+            $context['route_params'] ?? [],
+            $queryParams
+        );
     }
 
     abstract public function getTotalCount(array $context): int;

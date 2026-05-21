@@ -50,6 +50,7 @@ $router->addGlobalMiddleware(GlobalSecurityMiddleware::class);
 $compiledRoutes = $router->getRoutes();
 $container->set(UrlGenerator::class, static fn() => new UrlGenerator($compiledRoutes));
 
+// Привязка для Главной страницы (Декоратор + Кеш)
 $container->set(HomePageIndexHandlerInterface::class, static function() use ($container) {
     $originalHandler = new HomePageIndexHandler(
         $container->get(CategoryRepositoryInterface::class),
