@@ -19,14 +19,19 @@ final class Version20260521192355 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        // Создаем стандартные индексы. MySQL 8.0 будет одинаково быстро читать их и для ASC, и для DESC.
-        $this->addSql('ALTER TABLE posts ADD INDEX idx_posts_views (views)');
-        $this->addSql('ALTER TABLE posts ADD INDEX idx_posts_created (createdAt)');
+	        // 1. Добавляем поля для сортировки прямо в таблицу связей
+        $this->addSql('ALTER TABLE post_category ADD createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP');
+        $this->addSql('ALTER TABLE post_category ADD views INT NOT NULL DEFAULT 0');
+
+        // 2. Создаем ИДЕАЛЬНЫЕ составные индексы, где есть и фильтр, и сортировка
+        $this->addSql('CREATE INDEX idx_pc_category_created ON post_category (category_id, createdAt)');
+        $this->addSql('CREATE INDEX idx_pc_category_views ON post_category (category_id, views)');
     }
 
     public function down(Schema $schema): void
     {
-        $this->addSql('ALTER TABLE posts DROP INDEX idx_posts_views');
-        $this->addSql('ALTER TABLE posts DROP INDEX idx_posts_created');
+               $this->addSql('DROP INDEX idx_pc_category_created ON post_category');
+        $this->addSql('DROP INDEX idx_pc_category_views ON post_category');
+        $this->addSql('ALTER TABLE post_category DROP createdAt, DROP views');
     }
 }

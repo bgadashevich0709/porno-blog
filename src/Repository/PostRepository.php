@@ -149,17 +149,17 @@ class PostRepository extends EntityRepository implements PostRepositoryInterface
 
         return $row;
     }
+//ВОТ ИДЕАЛЬНОЕ РЕШЕНИЕ!
+public function getIdSubQueryBuilder(string $categoryId, string $sortField, string $sortWay): QueryBuilder
+{
+    return $this->getEntityManager()->getConnection()->createQueryBuilder()
+        ->select('pc.post_id AS id')
+        ->from('post_category', 'pc')
+        ->where('pc.category_id = :category_id')
+        ->orderBy('pc.' . $sortField, $sortWay) // Сортируем по полю внутри этой же таблицы!
+        ->setParameter('category_id', $categoryId);
+}
 
-    public function getIdSubQueryBuilder(string $categoryId, string $sortField, string $sortWay): QueryBuilder
-    {
-        return $this->getEntityManager()->getConnection()->createQueryBuilder()
-            ->select('p.id')
-            ->from('posts', 'p')
-            ->innerJoin('p', 'post_category', 'pc', 'pc.post_id = p.id')
-            ->where('pc.category_id = :category_id')
-            ->orderBy('p.' . $sortField, $sortWay)
-            ->setParameter('category_id', $categoryId);
-    }
 
     public function getCountQueryBuilder(string $categoryId): QueryBuilder
     {
@@ -185,13 +185,24 @@ class PostRepository extends EntityRepository implements PostRepositoryInterface
             ->from('posts', 'p');
     }
 
-    public function incrementViewsCount(string $id): void
-    {
-        $this->getEntityManager()->getConnection()->createQueryBuilder()
-            ->update('posts')
-            ->set('views', 'views + 1')
-            ->where('id = :id')
-            ->setParameter('id', $id)
-            ->executeStatement();
-    }
+public function incrementViewsCount(string $id): void
+{
+    /*
+    $this->getEntityManager()->getConnection()->createQueryBuilder()
+        ->update('posts')
+        ->set('views', 'views + 1')
+        ->where('id = :id')
+        ->setParameter('id', $id)
+        ->executeStatement();
+    */
+
+    $this->getEntityManager()->getConnection()->executeStatement('
+        UPDATE posts p
+        LEFT JOIN post_category pc ON pc.post_id = p.id
+        SET p.views = p.views + 1,
+            pc.views = pc.views + 1
+        WHERE p.id = :id
+    ', ['id' => $id]);
+}
+
 }
