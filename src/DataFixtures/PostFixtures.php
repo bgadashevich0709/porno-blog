@@ -9,7 +9,7 @@ use Symfony\Component\Console\Output\ConsoleOutput;
 
 class PostFixtures implements FixtureInterface
 {
-    private const int TOTAL_POSTS = 20000;
+    private const int TOTAL_POSTS = 50000;
     //    private const int TOTAL_POSTS = 2000;
     private const int BATCH_SIZE = 5000;
 
@@ -18,7 +18,6 @@ class PostFixtures implements FixtureInterface
         $globalStartTime = microtime(true);
         $output = new ConsoleOutput();
 
-        // --- ЭТАП 1: ИНИЦИАЛИЗАЦИЯ И ПОДГОТОВКА ПУЛОВ ---
         $stage1Start = microtime(true);
         $output->writeln('<info>[Profiler] Этап 1: Генерация пулов данных через Faker...</info>');
 

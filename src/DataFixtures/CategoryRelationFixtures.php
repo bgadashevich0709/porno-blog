@@ -17,7 +17,7 @@ class CategoryRelationFixtures implements FixtureInterface
         $db = $manager->getConnection();
 
         $db->executeStatement('SET FOREIGN_KEY_CHECKS=0;');
-        $db->executeStatement("DELETE FROM post_category WHERE post_id LIKE '%';");
+        $db->executeStatement("DELETE FROM post_category;");
 
         $categoryIds = $db->createQueryBuilder()
             ->select('id')
@@ -25,22 +25,29 @@ class CategoryRelationFixtures implements FixtureInterface
             ->fetchAllAssociative();
         $categoryIds = array_column($categoryIds, 'id');
 
-        if (empty($categoryIds)) {
+        if (count($categoryIds) < 4) {
             $db->executeStatement('SET FOREIGN_KEY_CHECKS=1;');
-            throw new \RuntimeException('Отсутствуют категории в базе данных. Сначала запустите фикстуры категорий.');
+            throw new \RuntimeException('Для генерации связей (от 2 до 4) необходимо минимум 4 категории в таблице.');
         }
 
-        $output->writeln('<info>[Profiler] Этаг 2: Мощный импорт связей через ELT(RAND)...</info>');
-
+        $output->writeln('<info>[Profiler] Этап 2: Мощный импорт связей (от 2 до 4 на пост)...</info>');
         $dbStart = microtime(true);
 
         $escapedCats = implode(',', array_map([$db, 'quote'], $categoryIds));
         $catsCount = count($categoryIds);
 
         $sql = "
-            INSERT INTO post_category (post_id, category_id)
-            SELECT p.id, ELT(FLOOR(RAND() * {$catsCount}) + 1, {$escapedCats})
-            FROM posts p
+            INSERT IGNORE INTO post_category (post_id, category_id)
+            SELECT post_id, category_id FROM (
+                SELECT p.id as post_id, ELT(FLOOR(RAND() * {$catsCount}) + 1, {$escapedCats}) as category_id, 1 as num FROM posts p
+                UNION ALL
+                SELECT p.id as post_id, ELT(FLOOR(RAND() * {$catsCount}) + 1, {$escapedCats}) as category_id, 2 as num FROM posts p
+                UNION ALL
+                SELECT p.id as post_id, ELT(FLOOR(RAND() * {$catsCount}) + 1, {$escapedCats}) as category_id, 3 as num FROM posts p
+                UNION ALL
+                SELECT p.id as post_id, ELT(FLOOR(RAND() * {$catsCount}) + 1, {$escapedCats}) as category_id, 4 as num FROM posts p
+            ) as sub_relations
+            WHERE num <= FLOOR(2 + RAND() * 3)
         ";
 
         $db->executeStatement($sql);
@@ -52,8 +59,9 @@ class CategoryRelationFixtures implements FixtureInterface
         $output->writeln("\n<options=bold;fg=cyan>================ ПОДРОБНЫЙ ОТЧЕТ ПРОФАЙЛЕРА СВЯЗЕЙ ===============</>");
         $output->writeln(sprintf("• Работа PHP (Подготовка строк):          <fg=yellow>%.4f сек.</>", $globalTime - $totalDbTime));
         $output->writeln(sprintf("• Генерация и запись в СУБД (ELT + RAND): <fg=yellow>%.4f сек.</>", $totalDbTime));
-        $output->writeln("<options=bold;fg=cyan>-----------------------------------------------------------</>");
+        $options = 'options=bold;fg=cyan';
+        $output->writeln("<$options>-----------------------------------------------------------</>");
         $output->writeln(sprintf("• ОБЩЕЕ ВРЕМЯ ВЫПОЛНЕНИЯ ФИКСТУРЫ СВЯЗЕЙ: <options=bold;fg=green>%.4f сек.</>", $globalTime));
-        $output->writeln("<options=bold;fg=cyan>===========================================================</>\n");
+        $output->writeln("<$options>===========================================================</>\n");
     }
 }
