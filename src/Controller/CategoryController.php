@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Common\Controller\AbstractController;
 use App\Common\Http\Attribute\MapQueryString;
 use App\Common\Middleware\LoggerMiddleware;
+use App\Common\Middleware\ProfilerMiddleware;
 use App\Common\Router\Route\Get;
 use App\UseCase\Controller\Category\CategoryShowHandler;
 use App\UseCase\Controller\Category\Dto\CategoryRequestDto;
@@ -26,7 +27,7 @@ class CategoryController extends AbstractController
      * Роутер запишет это значение в $_SERVER['ROUTE_FORMAT'], и фабрика выберет нужный класс ответа.
      */
     //    #[Get('/categories/{id}', middleware: [LoggerMiddleware::class], format: 'xml')]
-    #[Get('/categories/{id}', middleware: [LoggerMiddleware::class])]
+    #[Get('/categories/{id}', middleware: [LoggerMiddleware::class,  ProfilerMiddleware::class])]
     public function show(string $id, #[MapQueryString] CategoryRequestDto $requestDto): void
     {
         $data = $this->homepageIndexHandler->getCategoryShowData($id, $requestDto);

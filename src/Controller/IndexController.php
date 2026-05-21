@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Common\Controller\AbstractController;
 use App\Common\Middleware\LoggerMiddleware;
+use App\Common\Middleware\ProfilerMiddleware;
 use App\Common\Router\Route\Get;
 use App\UseCase\Controller\HomePage\Handler\HomePageIndexHandlerInterface;
 
@@ -15,7 +16,7 @@ class IndexController extends AbstractController
         parent::__construct();
     }
 
-    #[Get('/', middleware: [LoggerMiddleware::class])]
+    #[Get('/', middleware: [LoggerMiddleware::class, ProfilerMiddleware::class])]
     public function index(): void
     {
         $this->render('index.tpl', [

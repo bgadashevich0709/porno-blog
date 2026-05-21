@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Common\Config\DbConfig;
 use App\Common\Config\Env;
+use App\Common\Debug\ProfilingConnection;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Types\Exception\TypesException;
 use Doctrine\DBAL\Types\Type;
@@ -33,6 +36,19 @@ function getEntityManager(): EntityManager
 
     $connection = DriverManager::getConnection($connectionParams, $ormConfig);
     $connection->getDatabasePlatform()->registerDoctrineTypeMapping('uuid', 'uuid');
+
+    try {
+        $profilingConnection = new ProfilingConnection(
+            $connection->getParams(),
+            $connection->getDriver(),
+            $connection->getConfiguration()
+        );
+
+        $profilingConnection->setOriginalConnection($connection);
+        $connection = $profilingConnection;
+    } catch (\Throwable $e) {
+        // Если при передаче параметров возникли проблемы, безопасно откатываемся к оригиналу
+    }
 
     return new EntityManager($connection, $ormConfig);
 }

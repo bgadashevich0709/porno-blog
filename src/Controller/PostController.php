@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Common\Controller\AbstractController;
 use App\Common\Middleware\LoggerMiddleware;
+use App\Common\Middleware\ProfilerMiddleware;
 use App\Common\Router\Route\Get;
 use App\UseCase\Controller\Post\PostShowHandler;
 
@@ -15,7 +16,7 @@ class PostController extends AbstractController
         parent::__construct();
     }
 
-    #[Get('/posts/{id}', middleware: [LoggerMiddleware::class])]
+    #[Get('/posts/{id}', middleware: [LoggerMiddleware::class, ProfilerMiddleware::class])]
     public function show(string $id): void
     {
         $data = $this->postShowHandler->getPostShowData($id);
@@ -23,7 +24,6 @@ class PostController extends AbstractController
         $this->render('post.tpl', [
             'title' => $data->post->title,
             'data' => $data,
-            //            'similarPosts' => $data->similarPosts
         ]);
     }
 }
