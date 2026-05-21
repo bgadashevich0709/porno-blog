@@ -12,9 +12,6 @@ readonly class CachedHomePageIndexHandler implements HomePageIndexHandlerInterfa
 {
     private const int CACHE_TTL_SECONDS = 3600;
 
-    /**
-     * @param HomePageIndexHandler $delegate
-     */
     public function __construct(
         private HomePageIndexHandlerInterface $delegate,
         private CacheInterface                $cache
@@ -26,6 +23,7 @@ readonly class CachedHomePageIndexHandler implements HomePageIndexHandlerInterfa
 
         $cachedData = $this->cache->get($cacheKey);
         if ($cachedData instanceof HomepageDataDto) {
+            CacheProfiler::logHit(true);
             return $cachedData;
         }
 
@@ -43,3 +41,4 @@ readonly class CachedHomePageIndexHandler implements HomePageIndexHandlerInterfa
         return $data;
     }
 }
+
