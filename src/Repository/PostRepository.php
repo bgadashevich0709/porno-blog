@@ -67,20 +67,20 @@ class PostRepository extends EntityRepository implements PostRepositoryInterface
         }
 
         $connection = $this->getEntityManager()->getConnection();
-        $safeLimit = (int) $limit;
 
-        $sqlIds = "
-            SELECT DISTINCT pc.post_id
-            FROM post_category pc
-            WHERE pc.category_id IN (:categoryIds)
-            LIMIT {$safeLimit}
-        ";
+        $qbIds = $connection->createQueryBuilder();
+        $qbIds->select('pc.post_id')
+            ->from('post_category', 'pc')
+            ->where('pc.category_id IN (:categoryIds)')
+            ->groupBy('pc.post_id')
+            ->orderBy('pc.post_id', 'DESC')
+            ->setMaxResults($limit); // Безопасный лимит через параметры СУБД
 
-        $targetRows = $connection->fetchAllAssociative($sqlIds, [
-            'categoryIds' => $categoryIds,
-        ], [
-            'categoryIds' => \Doctrine\DBAL\ArrayParameterType::STRING,
-        ]);
+        $targetRows = $connection->fetchAllAssociative(
+            $qbIds->getSQL(),
+            ['categoryIds' => $categoryIds],
+            ['categoryIds' => \Doctrine\DBAL\ArrayParameterType::STRING]
+        );
 
         if (empty($targetRows)) {
             return [];
@@ -88,26 +88,27 @@ class PostRepository extends EntityRepository implements PostRepositoryInterface
 
         $postIds = array_column($targetRows, 'post_id');
 
-        $finalSql = "
-            SELECT 
-                p.id, 
-                p.title, 
-                p.description, 
-                p.image, 
-                p.views,
-                p.createdAt,
-                GROUP_CONCAT(pc.category_id) as category_ids
-            FROM posts p
-            INNER JOIN post_category pc ON p.id = pc.post_id
-            WHERE p.id IN (:postIds)
-            GROUP BY p.id, p.title, p.description, p.image, p.views, p.createdAt
-        ";
+        $qbFinal = $connection->createQueryBuilder();
+        $qbFinal->select(
+            'p.id',
+            'p.title',
+            'p.description',
+            'p.image',
+            'p.views',
+            'p.createdAt',
+            'GROUP_CONCAT(pc.category_id) as category_ids'
+        )
+            ->from('posts', 'p')
+            ->innerJoin('p', 'post_category', 'pc', 'p.id = pc.post_id')
+            ->where('p.id IN (:postIds)')
+            ->groupBy('p.id', 'p.title', 'p.description', 'p.image', 'p.views', 'p.createdAt')
+            ->orderBy('p.createdAt', 'DESC');
 
-        $rows = $connection->fetchAllAssociative($finalSql, [
-            'postIds' => $postIds,
-        ], [
-            'postIds' => \Doctrine\DBAL\ArrayParameterType::STRING,
-        ]);
+        $rows = $connection->fetchAllAssociative(
+            $qbFinal->getSQL(),
+            ['postIds' => $postIds],
+            ['postIds' => \Doctrine\DBAL\ArrayParameterType::STRING]
+        );
 
         return array_map(function (array $row) {
             $row['category_ids'] = !empty($row['category_ids'])
@@ -149,17 +150,16 @@ class PostRepository extends EntityRepository implements PostRepositoryInterface
 
         return $row;
     }
-//ВОТ ИДЕАЛЬНОЕ РЕШЕНИЕ!
-public function getIdSubQueryBuilder(string $categoryId, string $sortField, string $sortWay): QueryBuilder
-{
-    return $this->getEntityManager()->getConnection()->createQueryBuilder()
-        ->select('pc.post_id AS id')
-        ->from('post_category', 'pc')
-        ->where('pc.category_id = :category_id')
-        ->orderBy('pc.' . $sortField, $sortWay) // Сортируем по полю внутри этой же таблицы!
-        ->setParameter('category_id', $categoryId);
-}
 
+    public function getIdSubQueryBuilder(string $categoryId, string $sortField, string $sortWay): QueryBuilder
+    {
+        return $this->getEntityManager()->getConnection()->createQueryBuilder()
+            ->select('pc.post_id AS id')
+            ->from('post_category', 'pc')
+            ->where('pc.category_id = :category_id')
+            ->orderBy('pc.' . $sortField, $sortWay) // Сортируем по полю внутри этой же таблицы!
+            ->setParameter('category_id', $categoryId);
+    }
 
     public function getCountQueryBuilder(string $categoryId): QueryBuilder
     {
@@ -185,24 +185,31 @@ public function getIdSubQueryBuilder(string $categoryId, string $sortField, stri
             ->from('posts', 'p');
     }
 
-public function incrementViewsCount(string $id): void
-{
-    /*
-    $this->getEntityManager()->getConnection()->createQueryBuilder()
-        ->update('posts')
-        ->set('views', 'views + 1')
-        ->where('id = :id')
-        ->setParameter('id', $id)
-        ->executeStatement();
-    */
+    public function incrementViewsCount(string $id): void
+    {
+        $connection = $this->getEntityManager()->getConnection();
 
-    $this->getEntityManager()->getConnection()->executeStatement('
-        UPDATE posts p
-        LEFT JOIN post_category pc ON pc.post_id = p.id
-        SET p.views = p.views + 1,
-            pc.views = pc.views + 1
-        WHERE p.id = :id
-    ', ['id' => $id]);
-}
+        $connection->beginTransaction();
 
+        try {
+            $connection->executeStatement('
+            UPDATE posts 
+            SET views = views + 1 
+            WHERE id = :id
+        ', ['id' => $id]);
+
+            $connection->executeStatement('
+            UPDATE post_category 
+            SET views = views + 1 
+            WHERE post_id = :id
+        ', ['id' => $id]);
+
+            $connection->commit();
+        } catch (\Throwable $e) {
+
+            $connection->rollBack();
+
+            throw $e;
+        }
+    }
 }

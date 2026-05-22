@@ -61,9 +61,10 @@ final class Env
 
                 $value = preg_replace('/^["\']|["\']$/', '', $value);
 
-                if (!isset($_ENV[$key]) && !isset($_SERVER[$key])) {
-                    $_ENV[$key] = $value;
-                }
+                // Перезаписываем глобальные массивы, чтобы изменения из .env файла
+                // имели наивысший приоритет над закешированными переменными Docker
+                $_ENV[$key] = $value;
+                $_SERVER[$key] = $value;
             }
         }
     }

@@ -58,7 +58,7 @@ class CategoryShowHandler extends AbstractIdBasedPaginatedHandler
 
     protected function isCacheEnabled(array $context): bool
     {
-        return false;
+        return true;
     }
 
     protected function getTotalCount(array $context): int

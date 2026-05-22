@@ -25,7 +25,11 @@ function getEntityManager(): EntityManager
 {
     $paths = [__DIR__ . '/src/Entity'];
 
-    $isDevMode = Env::get('APP_DEBUG', true);
+    // TODO: Из-за багов автоконфигурации Doctrine ORM при $isDevMode = false (когда APP_DEBUG=false),
+    // она принудительно пытается подключиться к локальному Redis по адресу 127.0.0.1:6379, полностью
+    // игнорируя переменные окружения REDIS_HOST из Docker-сети. Временно захардкожено true.
+    // Для полноценного продакшена нужно переписать инициализацию через ручной вызов класса \Doctrine\ORM\Configuration.
+    $isDevMode = true;
     $ormConfig = ORMSetup::createAttributeMetadataConfiguration($paths, $isDevMode);
 
     if (!Type::hasType('uuid')) {

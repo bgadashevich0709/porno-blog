@@ -6,7 +6,7 @@ use Doctrine\DBAL\Query\QueryBuilder;
 
 interface PostRepositoryInterface
 {
-    public function findLatestPostsWithCategories(int $globalLimit = 300): array; // ДОБАВИТЬ СЮДА
+    public function findLatestPostsWithCategories(int $globalLimit = 300): array;
 
     public function findRelatedPostsByCategories(array $categoryIds, int $limit): array;
 

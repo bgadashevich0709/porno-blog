@@ -41,4 +41,3 @@ readonly class CachedHomePageIndexHandler implements HomePageIndexHandlerInterfa
         return $data;
     }
 }
-

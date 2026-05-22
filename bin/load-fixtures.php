@@ -23,4 +23,7 @@ echo "Загрузка фикстур в базу данных...\n";
 
 $executor->execute($loader->getFixtures());
 
+// Флаг true вторым аргументом переключает Doctrine в режим append (дозапись)
+//$executor->execute($loader->getFixtures(), true);
+
 echo "Готово! Тестовые данные успешно загружены.\n";

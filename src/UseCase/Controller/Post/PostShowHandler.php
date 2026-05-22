@@ -42,7 +42,7 @@ readonly class PostShowHandler
         if (empty($postDto->categoryIds)) {
             return new PostShowDto($postDto, [], $breadcrumbs);
         }
-	//$similarPosts = [];
+
         $similarPosts = $this->getSimilarPosts($id, $postDto->categoryIds, $similarLimit);
 
         return new PostShowDto($postDto, $similarPosts, $breadcrumbs);
@@ -84,10 +84,16 @@ readonly class PostShowHandler
         ];
     }
 
+    /**
+     * Возвращает список похожих постов.
+     *
+     * Критерии в ТЗ не уточнены, поэтому берутся последние посты по дате
+     * из тех же категорий, исключая текущий просматриваемый пост.
+     */
     private function getSimilarPosts(string $currentPostId, array $categoryIds, int $limit): array
     {
         $rawSimilar = $this->postRepository->findRelatedPostsByCategories($categoryIds, $limit + 1, 0);
-    
+
         $filtered = array_filter($rawSimilar, static fn(array $row) => $row['id'] !== $currentPostId);
         $sliced = array_slice($filtered, 0, $limit);
 

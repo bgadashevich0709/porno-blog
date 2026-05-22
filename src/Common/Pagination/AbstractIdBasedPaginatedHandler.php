@@ -124,4 +124,3 @@ abstract class AbstractIdBasedPaginatedHandler
         return new PaginateDto($mappedItems, $requestDto->getPage(), $requestDto->getPerPage(), $totalItems, $totalPages);
     }
 }
-

@@ -13,9 +13,9 @@ readonly class ProfilerMiddleware implements MiddlewareInterface
 {
     public function handle(Context $context, callable $next): void
     {
-        $environment = Env::get('APP_ENV', 'dev');
+        $isDebug = filter_var(Env::get('APP_DEBUG', false), FILTER_VALIDATE_BOOLEAN);
 
-        if ($environment === 'production' || $environment === 'prod') {
+        if (!$isDebug) {
             $next($context);
             return;
         }
@@ -31,12 +31,10 @@ readonly class ProfilerMiddleware implements MiddlewareInterface
 
     private function renderPanel(float $totalTimeMs): void
     {
-        // Вытаскиваем переменные, которые будут доступны внутри profiler.view.php
         $slowQueries = SqlProfiler::getSlowQueries();
         $hasSlowQueries = !empty($slowQueries);
         $isCacheHit = CacheProfiler::isHit();
 
-        // Нативно подключаем изолированный PHP-шаблон панели
         include __DIR__ . '/../Debug/view/profiler.view.php';
     }
 }
