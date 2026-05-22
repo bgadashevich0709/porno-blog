@@ -47,7 +47,7 @@ class CategoryRelationFixtures implements FixtureInterface
 
         $chunk = [];
         $insertedCount = 0;
-        $batchSize = 10000;
+        $batchSize = 2000;
 
         while ($post = $stmt->fetchAssociative()) {
             $requiredCatsCount = rand(2, 4);

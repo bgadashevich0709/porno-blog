@@ -8,7 +8,6 @@
 ?>
 <div id="global-profiler" style="background: #141416; color: #FFF; font-family: monospace; position: fixed; bottom: 0; left: 0; right: 0; z-index: 999999; box-shadow: 0px -5px 25px rgba(0,0,0,0.7); font-size: 13px; transition: transform 0.2s ease-in-out;">
 
-    <!-- Кнопка Свернуть/Развернуть -->
     <button onclick="toggleProfiler()" style="position: absolute; top: -28px; right: 20px; background: #141416; color: #00F0FF; border: 1px solid #2C2C2E; border-bottom: none; border-radius: 4px 4px 0 0; padding: 5px 15px; cursor: pointer; font-family: monospace; font-size: 11px; font-weight: bold; box-shadow: 0px -5px 10px rgba(0,0,0,0.3);" id="profiler-toggle-btn">⬇️ СВЕРНУТЬ</button>
 
     <!-- Внутренний контент панели -->

@@ -13,7 +13,7 @@ use App\UseCase\Controller\Category\Dto\CategoryRequestDto;
 class CategoryController extends AbstractController
 {
     public function __construct(
-        private readonly CategoryShowHandler $homepageIndexHandler,
+        private readonly CategoryShowHandler $categoryShowHandler,
     ) {
         parent::__construct();
     }
@@ -30,7 +30,7 @@ class CategoryController extends AbstractController
     #[Get('/categories/{id}', middleware: [LoggerMiddleware::class,  ProfilerMiddleware::class])]
     public function show(string $id, #[MapQueryString] CategoryRequestDto $requestDto): void
     {
-        $data = $this->homepageIndexHandler->getCategoryShowData($id, $requestDto);
+        $data = $this->categoryShowHandler->getCategoryShowData($id, $requestDto);
 
         $this->render('category.tpl', [
             'title' => $data->category->title,

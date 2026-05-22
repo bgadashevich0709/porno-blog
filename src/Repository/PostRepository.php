@@ -18,44 +18,29 @@ class PostRepository extends EntityRepository implements PostRepositoryInterface
         parent::__construct($em, $em->getClassMetadata(Post::class));
     }
 
-    public function findLatestPostsWithCategories(int $globalLimit = 300): array
+    public function findLatestPostsForCategoryExcluding(string $categoryId, array $excludedIds, int $limit = 3): array
     {
-        $db = $this->getEntityManager()->getConnection();
+        $connection = $this->getEntityManager()->getConnection();
 
-        $sql = "
-        SELECT p.id, p.title, p.description, p.image, p.views, p.createdAt
-        FROM posts p
-        INNER JOIN (
-            SELECT id 
-            FROM posts 
-            ORDER BY createdAt DESC, id DESC 
-            LIMIT {$globalLimit}
-        ) as fast_ids ON p.id = fast_ids.id
-        ORDER BY p.createdAt DESC, p.id DESC
-        ";
+        $qb = $connection->createQueryBuilder()
+            ->select('p.*')
+            ->from('post_category', 'pc')
+            ->innerJoin('pc', 'posts', 'p', 'p.id = pc.post_id')
+            ->where('pc.category_id = :category_id')
+            ->orderBy('pc.createdAt', 'DESC')
+            ->setMaxResults($limit)
+            ->setParameter('category_id', $categoryId);
 
-        $rawRows = $db->fetchAllAssociative($sql);
-
-        if (empty($rawRows)) {
-            return [];
+        // Если какие-то посты уже выведены в категориях выше, база мгновенно отсечет их по индексу
+        if (!empty($excludedIds)) {
+            $qb->andWhere('pc.post_id NOT IN (:excluded_ids)')
+               ->setParameter('excluded_ids', $excludedIds, \Doctrine\DBAL\ArrayParameterType::STRING);
         }
 
-        $postIds = array_column($rawRows, 'id');
-        $escapedPostIds = implode(',', array_map([$db, 'quote'], $postIds));
-
-        $relationsSql = "SELECT post_id, category_id FROM post_category WHERE post_id IN ({$escapedPostIds})";
-        $relations = $db->fetchAllAssociative($relationsSql);
-
-        $categoriesMap = [];
-        foreach ($relations as $rel) {
-            $categoriesMap[$rel['post_id']][] = $rel['category_id'];
-        }
-
-        return array_map(function (array $row) use ($categoriesMap) {
-            $row['category_ids'] = $categoriesMap[$row['id']] ?? [];
-            return $row;
-        }, $rawRows);
+        return $qb->fetchAllAssociative();
     }
+
+
 
     /**
      * @throws Exception
