@@ -164,7 +164,7 @@ class PostRepository extends EntityRepository implements PostRepositoryInterface
     public function getCountQueryBuilder(string $categoryId): QueryBuilder
     {
         return $this->getEntityManager()->getConnection()->createQueryBuilder()
-            ->select('COUNT(pc.post_id)') // Считаем по конкретному полю в индексе
+            ->select('COUNT(*)')
             ->from('post_category', 'pc')
             ->where('pc.category_id = :category_id')
             ->setParameter('category_id', $categoryId);

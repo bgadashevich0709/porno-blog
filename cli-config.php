@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Common\Config\DbConfig;
-use App\Common\Config\Env;
 use App\Common\Debug\ProfilingConnection;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Types\Exception\TypesException;

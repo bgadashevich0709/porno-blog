@@ -1,17 +1,15 @@
-# Скомпилированные стили (артефакты сборки)
 /public/assets/build/
 
-# Настройки IDE PhpStorm
 /.idea/
 
-# Кэш и скомпилированные шаблоны Smarty (пути исправлены)
 /var/smarty/templates_c/
 /var/smarty/cache/
 
-# Зависимости Composer и Node (если есть)
 /vendor/
 /node_modules/
 
-# Локальные конфигурации окружения
 .env
 .env.local
+
+.php-cs-fixer.cache
+

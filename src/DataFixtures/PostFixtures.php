@@ -9,13 +9,15 @@ use Symfony\Component\Console\Output\ConsoleOutput;
 
 class PostFixtures implements FixtureInterface
 {
-    private const int TOTAL_POSTS = 3000000;
+    private const int TOTAL_POSTS = 100000;
     //    private const int TOTAL_POSTS = 2000;
     private const int BATCH_SIZE = 10000;
-//    private const int BATCH_SIZE = 5000;
+    //    private const int BATCH_SIZE = 5000;
 
     public function load(ObjectManager $manager): void
     {
+        set_time_limit(0);
+
         $globalStartTime = microtime(true);
         $output = new ConsoleOutput();
 
@@ -38,9 +40,13 @@ class PostFixtures implements FixtureInterface
             $contentPool[] = $db->quote($faker->text(1500));
             $descriptionPool[] = $db->quote($faker->text(350));
             $imagePool[] = $db->quote($faker->imageUrl(640, 480, 'cats', true, 'Faker'));
-            $datePool[] = $db->quote($faker->dateTimeBetween('-2 years', 'now')->format('Y-m-d H:i:s'));
             $titlePool[] = $db->quote($faker->sentence(rand(4, 8)));
         }
+
+        for ($k = 0; $k < 10000; $k++) {
+            $datePool[] = $db->quote($faker->dateTimeBetween('-2 years', 'now')->format('Y-m-d H:i:s'));
+        }
+
         $stage1Time = microtime(true) - $stage1Start;
 
         $output->writeln(sprintf('<info>[Profiler] Этап 2 и 3: Обработка %d записей пакетами по %d...</info>', self::TOTAL_POSTS, self::BATCH_SIZE));
@@ -57,8 +63,8 @@ class PostFixtures implements FixtureInterface
                 $imagePool[rand(0, 9)],
                 $descriptionPool[rand(0, 9)],
                 $contentPool[rand(0, 9)],
-                $datePool[rand(0, 9)],
-                rand(2, 100)
+                $datePool[rand(0, 999)],
+                rand(2, 1000)
             );
             $totalPhpTime += (microtime(true) - $phpStart);
 
