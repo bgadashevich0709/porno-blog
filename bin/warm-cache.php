@@ -7,58 +7,29 @@ require_once __DIR__ . '/../cli-config.php';
 
 use App\Application\Enum\CategorySort;
 use App\Application\Enum\SortWay;
-use App\Application\Service\PostDtoFactory;
-use App\Common\Cache\CacheFactory;
+use App\Application\Provider\BusinessLogicServiceProvider;
+use App\Application\Provider\EventServiceProvider;
+use App\Application\Provider\InfrastructureServiceProvider;
+use App\Application\Provider\RoutingServiceProvider;
 use App\Common\Cache\CacheInterface;
 use App\Common\Container\Container;
-use App\Common\Router\UrlGenerator;
 use App\Repository\CategoryRepositoryInterface;
-use App\Repository\PostRepositoryInterface;
 use App\UseCase\Controller\Category\CategoryShowHandler;
 use App\UseCase\Controller\Category\Dto\CategoryRequestDto;
-use App\UseCase\Controller\HomePage\Handler\CachedHomePageIndexHandler;
-use App\UseCase\Controller\HomePage\Handler\HomePageIndexHandler;
 use App\UseCase\Controller\HomePage\Handler\HomePageIndexHandlerInterface;
-use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\EntityManagerInterface;
 
 $container = new Container();
 
-$container->set(CacheInterface::class, static fn() => CacheFactory::create());
+$providers = [
+    new InfrastructureServiceProvider(),
+    new RoutingServiceProvider(), // Нужен для UrlGenerator внутри хэндлеров
+    new BusinessLogicServiceProvider(),
+    new EventServiceProvider(),
+];
 
-$emFactory = static fn() => getEntityManager();
-$container->set(EntityManagerInterface::class, $emFactory);
-$container->set(EntityManager::class, $emFactory);
-
-$controllersConfiguration = require __DIR__ . '/../config/routes.php';
-$router = new \App\Common\Router\Router($container);
-$router->registerControllers($controllersConfiguration);
-$compiledRoutes = $router->getRoutes();
-$container->set(UrlGenerator::class, static fn() => new UrlGenerator($compiledRoutes));
-
-$container->set(HomePageIndexHandlerInterface::class, static function () use ($container) {
-    $originalHandler = new HomePageIndexHandler(
-        $container->get(CategoryRepositoryInterface::class),
-        $container->get(PostRepositoryInterface::class),
-        $container->get(UrlGenerator::class),
-        $container->get(PostDtoFactory::class)
-    );
-
-    return new CachedHomePageIndexHandler(
-        $originalHandler,
-        $container->get(CacheInterface::class)
-    );
-});
-
-$container->set(CategoryShowHandler::class, static function () use ($container) {
-    return new CategoryShowHandler(
-        $container->get(CategoryRepositoryInterface::class),
-        $container->get(PostRepositoryInterface::class),
-        $container->get(PostDtoFactory::class),
-        $container->get(UrlGenerator::class),
-        $container->get(CacheInterface::class)
-    );
-});
+foreach ($providers as $provider) {
+    $provider->register($container);
+}
 
 
 function warmHomePageCache(Container $container, CacheInterface $cache): void
