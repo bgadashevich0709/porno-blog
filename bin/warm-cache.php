@@ -7,10 +7,6 @@ require_once __DIR__ . '/../cli-config.php';
 
 use App\Application\Enum\CategorySort;
 use App\Application\Enum\SortWay;
-use App\Application\Provider\BusinessLogicServiceProvider;
-use App\Application\Provider\EventServiceProvider;
-use App\Application\Provider\InfrastructureServiceProvider;
-use App\Application\Provider\RoutingServiceProvider;
 use App\Common\Cache\CacheInterface;
 use App\Common\Container\Container;
 use App\Repository\CategoryRepositoryInterface;
@@ -20,17 +16,11 @@ use App\UseCase\Controller\HomePage\Handler\HomePageIndexHandlerInterface;
 
 $container = new Container();
 
-$providers = [
-    new InfrastructureServiceProvider(),
-    new RoutingServiceProvider(),
-    new BusinessLogicServiceProvider(),
-    new EventServiceProvider(),
-];
+$providers = require __DIR__ . '/../config/providers.php';
 
 foreach ($providers as $provider) {
     $provider->register($container);
 }
-
 
 function warmHomePageCache(Container $container, CacheInterface $cache): void
 {

@@ -8,19 +8,10 @@ require_once __DIR__ . '/../cli-config.php';
 use App\Common\Container\Container;
 use App\Common\Http\Request;
 use App\Common\Router\Router;
-use App\Application\Provider\InfrastructureServiceProvider;
-use App\Application\Provider\RoutingServiceProvider;
-use App\Application\Provider\BusinessLogicServiceProvider;
-use App\Application\Provider\EventServiceProvider;
 
 $container = new Container();
 
-$providers = [
-    new InfrastructureServiceProvider(),
-    new RoutingServiceProvider(),
-    new BusinessLogicServiceProvider(),
-    new EventServiceProvider(),
-];
+$providers = require __DIR__ . '/../config/providers.php';
 
 foreach ($providers as $provider) {
     $provider->register($container);
