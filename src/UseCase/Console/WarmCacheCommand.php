@@ -43,9 +43,8 @@ final readonly class WarmCacheCommand implements CommandInterface
         ConsoleOutput::line("Прогрев главной страницы... ");
         try {
             $postsLimit = 3;
-            $homeCacheKey = "homepage_data_limit_{$postsLimit}";
 
-            $this->cache->delete($homeCacheKey);
+            $this->cache->invalidateTags(['posts_list', 'categories_list']);
 
             $this->homePageHandler->getHomepageData($postsLimit);
             ConsoleOutput::line("Готово!");
