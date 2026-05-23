@@ -32,7 +32,12 @@
     "friendsofphp/php-cs-fixer": "^3.59"
   },
   "scripts": {
+    "db:migrate": "vendor/bin/doctrine-migrations migrations:migrate --no-interaction",
     "db:fixtures": "php bin/load-fixtures.php",
+    "db:reset": [
+      "@db:migrate",
+      "@db:fixtures"
+    ],
     "cache:warm": "php bin/warm-cache.php",
     "cs": "php-cs-fixer fix --allow-risky=yes",
     "test": "vendor/bin/phpunit tests"

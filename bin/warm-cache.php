@@ -22,7 +22,7 @@ $container = new Container();
 
 $providers = [
     new InfrastructureServiceProvider(),
-    new RoutingServiceProvider(), // Нужен для UrlGenerator внутри хэндлеров
+    new RoutingServiceProvider(),
     new BusinessLogicServiceProvider(),
     new EventServiceProvider(),
 ];
