@@ -5,6 +5,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./:/var/www
       - smarty_cache:/var/www/var/smarty
@@ -55,4 +57,3 @@ networks:
 volumes:
   mysql_data:
   smarty_cache:
-
