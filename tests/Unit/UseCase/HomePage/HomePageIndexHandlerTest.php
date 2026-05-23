@@ -39,7 +39,6 @@ class HomePageIndexHandlerTest extends TestCase
 
     public function testGetHomepageDataDistributesPostsWithoutDuplicates(): void
     {
-        // 1. Мокаем категории
         $categoriesRaw = [
             ['id' => '1', 'name' => 'Tech'],
             ['id' => '2', 'name' => 'Design'],
@@ -48,8 +47,6 @@ class HomePageIndexHandlerTest extends TestCase
         $this->categoryRepository->method('findNonEmptyCategories')
             ->willReturn($categoriesRaw);
 
-        // 2. Мокаем новый метод репозитория findLatestPostsForCategoryExcluding последовательными вызовами (willReturnCallback или willReturnOnConsecutiveCalls)
-        // Для первой категории (Tech, id=1) без исключений
         $techPosts = [
             [
                 'id' => '100', 'category_ids' => ['1', '2'], 'title' => 'Cross-category Post',
@@ -65,7 +62,6 @@ class HomePageIndexHandlerTest extends TestCase
             ],
         ];
 
-        // Для второй категории (Design, id=2) с уже исключенным постом '100'
         $designPosts = [
             [
                 'id' => '103', 'category_ids' => ['2'], 'title' => 'Design Post 2',
@@ -77,7 +73,6 @@ class HomePageIndexHandlerTest extends TestCase
             ],
         ];
 
-        // Настраиваем маппинг аргументов нового метода
         $this->postRepository->method('findLatestPostsForCategoryExcluding')
             ->willReturnCallback(function (string $categoryId, array $excludedIds, int $limit) use ($techPosts, $designPosts) {
                 if ($categoryId === '1') {
@@ -91,23 +86,19 @@ class HomePageIndexHandlerTest extends TestCase
                 return [];
             });
 
-        // 3. Выполняем код обработчика главной страницы
         $result = $this->handler->getHomepageData(3);
 
-        // 4. Проверяем результаты сборки Dto
         $this->assertInstanceOf(HomepageDataDto::class, $result);
 
         $categories = $result->categories;
         $this->assertCount(2, $categories);
 
-        // Проверка первой категории (Tech)
         $this->assertEquals('1', $categories[0]->id);
         $this->assertCount(3, $categories[0]->latestPosts);
         $this->assertEquals('100', $categories[0]->latestPosts[0]->id);
         $this->assertEquals('101', $categories[0]->latestPosts[1]->id);
         $this->assertEquals('102', $categories[0]->latestPosts[2]->id);
 
-        // Проверка второй категории (Design)
         $this->assertEquals('2', $categories[1]->id);
         $this->assertCount(2, $categories[1]->latestPosts);
         $this->assertEquals('103', $categories[1]->latestPosts[0]->id);
