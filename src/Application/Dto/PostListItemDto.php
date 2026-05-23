@@ -5,24 +5,19 @@ namespace App\Application\Dto;
 use App\Exceptions\InvalidArgumentException;
 use App\Traits\DateTimeParserTrait;
 
-/**
- * @noinspection PhpSyntaxErrorInspection
- */
 class PostListItemDto
 {
     use DateTimeParserTrait;
 
-    // Временно закомментировано для PHP 8.3
-    // public int $viewsCount {
-    //     set {
-    //         if ($value < 0) {
-    //             throw new InvalidArgumentException("Просмотры не могут быть отрицательными");
-    //         }
-    //         $this->viewsCount = $value;
-    //     }
-    // }
 
-    public int $viewsCount;
+    public int $viewsCount {
+        set {
+            if ($value < 0) {
+                throw new InvalidArgumentException("Просмотры не могут быть отрицательными");
+            }
+            $this->viewsCount = $value;
+        }
+    }
 
     /**
      * @param array<string> $categoryIds Массив строк (UUID) категорий
@@ -32,15 +27,11 @@ class PostListItemDto
         public string $title,
         public string $description,
         public string $image,
-        int $viewsCount, // Обычный аргумент (без public)
+        int $viewsCount,
         public array  $categoryIds,
         public string $link,
-        public \DateTimeImmutable $createdAt // Дата публикации
+        public \DateTimeImmutable $createdAt
     ) {
-        // Временная валидация для PHP 8.3 вместо хука свойства
-        if ($viewsCount < 0) {
-            throw new InvalidArgumentException("Просмотры не могут быть отрицательными");
-        }
         $this->viewsCount = $viewsCount;
     }
 
