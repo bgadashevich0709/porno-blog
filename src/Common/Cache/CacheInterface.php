@@ -12,7 +12,6 @@ interface CacheInterface
 
     public function delete(string $key): bool;
 
-
     public function invalidateTags(array $tags): void;
 
     public function clear(): bool;

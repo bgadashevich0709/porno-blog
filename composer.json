@@ -38,7 +38,7 @@
       "@db:migrate",
       "@db:fixtures"
     ],
-    "cache:warm": "php bin/warm-cache.php",
+    "cache:warm": "php bin/app cache:warm",
     "cs": "php-cs-fixer fix --allow-risky=yes",
     "test": "vendor/bin/phpunit tests"
   }

@@ -1,5 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
+// TODO: Перенести эту логику в новую консольную команду LoadFixturesCommand (fixtures:load)
+// TODO: Класс команды разместить по пути src/UseCase/Console/LoadFixturesCommand.php
+// TODO: Зависимость EntityManagerInterface инжектить напрямую через конструктор из контейнера
+
 use App\DataFixtures\CategoryFixtures;
 use App\DataFixtures\CategoryRelationFixtures;
 use App\DataFixtures\PostFixtures;

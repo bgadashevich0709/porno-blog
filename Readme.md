@@ -74,8 +74,6 @@ docker exec -it blog-php-1 sass --watch public/assets/css/style.scss:public/asse
 > 🛠️ **Лайфхак:** Если при запуске тестов ругнётся Git (`fatal: detected dubious ownership`), просто выполни внутри контейнера:  
 > `git config --global --add safe.directory /var/www`
 
----
-
 ## ⚡ Кэширование (Redis)
 
 Для ускорения главной страницы и страниц категорий используется система кэширования с умной инвалидацией по тегам. Тяжелые SQL-запросы к БД выполняются один раз, после чего готовые структуры DTO сохраняются в оперативную память Redis.
@@ -87,6 +85,10 @@ docker exec -it blog-php-1 sass --watch public/assets/css/style.scss:public/asse
 * **Прогреть кэш (главная страница и первые 10 страниц пагинации всех категорий):**
   ```bash
   composer cache:warm
+  ```
+  Или напрямую через консольное ядро фреймворка из контейнера:
+  ```bash
+  php bin/app cache:warm
   ```
 * **Полностью очистить всю память Redis (Сбросить весь кэш):**
   ```bash
@@ -100,6 +102,7 @@ docker exec -it blog-php-1 sass --watch public/assets/css/style.scss:public/asse
 > 🛠️ **Лайфхак:** В коде используется паттерн **«Декоратор»**. Бизнес-логика в `UseCase` ничего не знает о существовании Redis, что сохраняет код чистым. Если в админке обновляется пост или категория, кэш сбрасывается автоматически с помощью инвалидации тегов (`posts_list`, `categories_list`).
 
 ---
+
 
 ## 🧹 Кодстайл
 

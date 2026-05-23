@@ -8,24 +8,15 @@ use ReflectionClass;
 
 class Container implements ContainerInterface
 {
-    /**
-     * Карта определений: может хранить как Closure, так и строки (имена классов-реализаций)
-     */
     private array $definitions = [];
     private array $instances = [];
 
-    /**
-     * Изменено: теперь принимает mixed, чтобы можно было биндить и Closure, и string
-     */
     public function set(string $id, mixed $definition): void
     {
         $this->definitions[$id] = $definition;
         unset($this->instances[$id]);
     }
 
-    /**
-     * Позволяет настроить контекстное внедрение (конкретная реализация для конкретного класса)
-     */
     public function setContextual(string $targetClass, string $parameterName, mixed $definition): void
     {
         $contextualKey = "context:{$targetClass}:{$parameterName}";
@@ -60,6 +51,15 @@ class Container implements ContainerInterface
         }
 
         if (interface_exists($id)) {
+            foreach ($this->definitions as $definedId => $definition) {
+                if (class_exists($definedId)) {
+                    $ref = new ReflectionClass($definedId);
+                    if ($ref->implementsInterface($id)) {
+                        return $this->instances[$id] = $this->get($definedId);
+                    }
+                }
+            }
+
             $withoutInterface = str_replace('Interface', '', $id);
             if (class_exists($withoutInterface)) {
                 $ref = new ReflectionClass($withoutInterface);
@@ -100,7 +100,6 @@ class Container implements ContainerInterface
         throw new Exception("Service, Interface or Class '{$id}' cannot be resolved.");
     }
 
-
     public function has(string $id): bool
     {
         return isset($this->definitions[$id])
@@ -134,7 +133,6 @@ class Container implements ContainerInterface
             $paramName = $parameter->getName();
             $contextualKey = "context:{$class}:{$paramName}";
 
-            // 1. Проверяем наличие индивидуальной КОНТЕКСТНОЙ настройки для этого параметра
             if (isset($this->definitions[$contextualKey])) {
                 $definition = $this->definitions[$contextualKey];
                 $dependencies[] = $definition instanceof \Closure ? $definition($this) : $definition;
@@ -151,8 +149,8 @@ class Container implements ContainerInterface
                 throw new Exception("Cannot autowire built-in parameter '{$paramName}' in '{$class}'.");
             }
 
-            // 2. Разрешаем зависимость по имени интерфейса или класса типа
-            $dependencies[] = $this->get($type->getName());
+            // Защита типов для старых версий PHP
+            $dependencies[] = $this->get($type instanceof \ReflectionNamedType ? $type->getName() : (string) $type);
         }
 
         return $reflection->newInstanceArgs($dependencies);

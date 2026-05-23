@@ -1,0 +1,23 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../cli-config.php';
+
+use App\Common\Console\Application;
+use App\Common\Container\Container;
+
+$container = new Container();
+
+$providers = require __DIR__ . '/../config/providers.php';
+foreach ($providers as $provider) {
+    $provider->register($container);
+}
+
+$app = new Application($container);
+$app->autoDiscoverCommands(realpath(__DIR__ . '/../src'), 'App\\');
+
+$exitCode = $app->run($_SERVER['argv']);
+exit($exitCode);
