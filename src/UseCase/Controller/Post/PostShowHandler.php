@@ -1,31 +1,38 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\UseCase\Controller\Post;
 
 use App\Application\Dto\BreadcrumbItemDto;
 use App\Application\Dto\PostDto;
 use App\Application\Service\PostDtoFactory;
 use App\Common\Event\EventDispatcher;
+use App\Common\Http\RefererProvider;
 use App\Common\Router\UrlGenerator;
 use App\Common\Tracking\PageViewTracker;
+use App\Controller\CategoryController;
 use App\Controller\IndexController;
 use App\Exceptions\ResourceNotFoundException;
+use App\Repository\CategoryRepositoryInterface;
 use App\Repository\PostRepositoryInterface;
 use App\Traits\PostMapper;
 use App\UseCase\Controller\Post\Dto\PostShowDto;
 use App\UseCase\Event\PostUpdatedEvent;
 use Exception;
 
-readonly class PostShowHandler
+final readonly class PostShowHandler
 {
     use PostMapper;
 
     public function __construct(
-        private PostRepositoryInterface $postRepository,
-        private UrlGenerator            $urlGenerator,
-        private PageViewTracker         $pageViewTracker,
-        private EventDispatcher         $dispatcher,
-        private PostDtoFactory        $postDtoFactory,
+        private PostRepositoryInterface     $postRepository,
+        private CategoryRepositoryInterface $categoryRepository,
+        private RefererProvider             $refererProvider,
+        private UrlGenerator                $urlGenerator,
+        private PageViewTracker             $pageViewTracker,
+        private EventDispatcher             $dispatcher,
+        private PostDtoFactory              $postDtoFactory,
     ) {}
 
     /**
@@ -73,15 +80,56 @@ readonly class PostShowHandler
         return $this->postDtoFactory->createPostDto($rawPost);
     }
 
+    /**
+     * @return BreadcrumbItemDto[]
+     */
     private function buildBreadcrumbs(PostDto $postDto): array
     {
-        return [
+        $breadcrumbs = [
             new BreadcrumbItemDto(
                 'Главная',
                 $this->urlGenerator->generate(IndexController::class, 'index')
             ),
-            new BreadcrumbItemDto($postDto->title),
         ];
+
+        $refererUrl = $this->refererProvider->getReferer();
+
+        $targetCategoryId = $this->detectCategoryFromReferer($postDto->categoryIds, $refererUrl);
+
+        if ($targetCategoryId !== null) {
+            $category = $this->categoryRepository->getById($targetCategoryId);
+
+            if ($category !== null) {
+                $breadcrumbs[] = new BreadcrumbItemDto(
+                    (string) $category['name'],
+                    $this->urlGenerator->generate(CategoryController::class, 'show', ['id' => (string) $category['id']])
+                );
+            }
+        }
+
+        $breadcrumbs[] = new BreadcrumbItemDto($postDto->title);
+
+        return $breadcrumbs;
+    }
+
+    /**
+     * @param array<string|int> $categoryIds
+     */
+    private function detectCategoryFromReferer(array $categoryIds, ?string $refererUrl): ?string
+    {
+        if (empty($refererUrl) || empty($categoryIds)) {
+            return null;
+        }
+
+        foreach ($categoryIds as $categoryId) {
+            $categoryUrl = $this->urlGenerator->generate(CategoryController::class, 'show', ['id' => (string) $categoryId]);
+
+            if (str_contains($refererUrl, $categoryUrl)) {
+                return (string) $categoryId;
+            }
+        }
+
+        return null;
     }
 
     /**
