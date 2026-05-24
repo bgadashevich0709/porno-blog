@@ -2,10 +2,11 @@
 
 namespace App\Application\Dto;
 
+use App\Application\Service\Meta\HasMetaInterface; // ПОДКЛЮЧИЛИ
 use App\Exceptions\InvalidArgumentException;
 use App\Traits\DateTimeParserTrait;
 
-class PostDto
+class PostDto implements HasMetaInterface // ИМПЛЕМЕНТИРУЕМ ТУТ
 {
     use DateTimeParserTrait;
 
@@ -18,9 +19,6 @@ class PostDto
         }
     }
 
-    /**
-     * @param array<string> $categoryIds Массив строк (UUID) категорий
-     */
     public function __construct(
         public string $id,
         public string $title,
@@ -34,9 +32,6 @@ class PostDto
         $this->viewsCount = $viewsCount;
     }
 
-    /**
-     * @throws \Exception
-     */
     public static function fromArray(array $data): self
     {
         $categoryIds = is_string($data['category_ids'])
@@ -53,5 +48,25 @@ class PostDto
             viewsCount: (int) $data['views'],
             createdAt: self::parseRequiredDateTime($data, 'createdAt')
         );
+    }
+
+    public function getMetaTitle(): string
+    {
+        return $this->title;
+    }
+
+    public function getMetaDescription(): string
+    {
+        $textSource = $this->description ?: $this->content ?: '';
+        $cleanText = strip_tags($textSource);
+        if (mb_strlen($cleanText) > 160) {
+            return mb_substr($cleanText, 0, 157) . '...';
+        }
+        return $cleanText ?: 'Читать статью на нашем кастомном блоге.';
+    }
+
+    public function getMetaKeywords(): string
+    {
+        return "блог, статья, " . mb_strtolower($this->title);
     }
 }

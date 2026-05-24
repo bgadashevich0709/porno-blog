@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Application\Service\Meta\MetaService;
 use App\Common\Controller\AbstractController;
 use App\Common\Middleware\LoggerMiddleware;
 use App\Common\Middleware\ProfilerMiddleware;
@@ -12,6 +13,7 @@ class IndexController extends AbstractController
 {
     public function __construct(
         private readonly HomePageIndexHandlerInterface $homepageIndexHandler,
+        private readonly MetaService                  $metaService,
     ) {
         parent::__construct();
     }
@@ -19,9 +21,13 @@ class IndexController extends AbstractController
     #[Get('/', middleware: [LoggerMiddleware::class, ProfilerMiddleware::class])]
     public function index(): void
     {
+        $data = $this->homepageIndexHandler->getHomepageData();
+        $meta = $this->metaService->buildMeta($data);
+
         $this->render('index.tpl', [
             'title' => 'Главная страница блога',
-            'data' => $this->homepageIndexHandler->getHomepageData(),
+            'meta'  => $meta,
+            'data'  => $data,
         ]);
     }
 }
