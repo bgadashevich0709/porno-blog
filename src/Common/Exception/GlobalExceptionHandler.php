@@ -6,12 +6,18 @@ use App\Common\Response\ResponseStrategyFactory;
 use App\Common\Response\Startegy\JsonStrategy;
 use App\Common\Validator\Exception\ValidationException;
 use App\Exceptions\AccessDeniedException;
-use App\Exceptions\InvalidArgumentException; // Добавили импорт
+use App\Exceptions\InvalidArgumentException;
 use App\Exceptions\ResourceNotFoundException;
+use Psr\Log\LoggerInterface;
 use Throwable;
 
 class GlobalExceptionHandler
 {
+    // Моментально объявляем и инициализируем свойство прямо здесь
+    public function __construct(
+        private LoggerInterface $logger
+    ) {}
+
     public function register(): void
     {
         set_exception_handler([$this, 'handleException']);
@@ -36,7 +42,12 @@ class GlobalExceptionHandler
                     'success' => false,
                     'message' => $exception->getMessage() ?: 'Страница не найдена',
                 ];
-                $this->logException($exception, 'WARNING', $statusCode);
+                $this->logger->warning($exception->getMessage() ?: 'Страница не найдена', [
+                    'status_code' => $statusCode,
+                    'exception'   => get_class($exception),
+                    'file'        => $exception->getFile(),
+                    'line'        => $exception->getLine(),
+                ]);
                 break;
 
             case $exception instanceof AccessDeniedException:
@@ -46,7 +57,12 @@ class GlobalExceptionHandler
                     'success' => false,
                     'message' => $exception->getMessage() ?: 'Доступ запрещен',
                 ];
-                $this->logException($exception, 'WARNING', $statusCode);
+                $this->logger->warning($exception->getMessage() ?: 'Доступ запрещен', [
+                    'status_code' => $statusCode,
+                    'exception'   => get_class($exception),
+                    'file'        => $exception->getFile(),
+                    'line'        => $exception->getLine(),
+                ]);
                 break;
 
             case $exception instanceof InvalidArgumentException:
@@ -56,7 +72,12 @@ class GlobalExceptionHandler
                     'success' => false,
                     'message' => $exception->getMessage() ?: 'Некорректный запрос',
                 ];
-                $this->logException($exception, 'WARNING', $statusCode);
+                $this->logger->warning($exception->getMessage() ?: 'Некорректный запрос', [
+                    'status_code' => $statusCode,
+                    'exception'   => get_class($exception),
+                    'file'        => $exception->getFile(),
+                    'line'        => $exception->getLine(),
+                ]);
                 break;
 
             case $exception instanceof ValidationException:
@@ -67,7 +88,13 @@ class GlobalExceptionHandler
                     'message' => $exception->getMessage(),
                     'errors'  => $exception->getErrors(),
                 ];
-                $this->logException($exception, 'INFO', $statusCode);
+                $this->logger->info($exception->getMessage(), [
+                    'status_code' => $statusCode,
+                    'exception'   => get_class($exception),
+                    'errors'      => $exception->getErrors(),
+                    'file'        => $exception->getFile(),
+                    'line'        => $exception->getLine(),
+                ]);
                 break;
 
             default:
@@ -88,7 +115,13 @@ class GlobalExceptionHandler
                     $data['exception'] = $exception;
                 }
 
-                $this->logException($exception, 'ERROR', $statusCode, true);
+                $this->logger->error($exception->getMessage(), [
+                    'status_code' => $statusCode,
+                    'exception'   => get_class($exception),
+                    'file'        => $exception->getFile(),
+                    'line'        => $exception->getLine(),
+                    'trace'       => $exception->getTraceAsString(),
+                ]);
                 break;
         }
 
@@ -97,24 +130,5 @@ class GlobalExceptionHandler
         $strategy->render($template, $data);
 
         exit;
-    }
-
-    private function logException(Throwable $exception, string $level, int $statusCode, bool $includeTrace = false): void
-    {
-        $message = sprintf(
-            "[%s] HTTP %d | %s: %s in %s on line %d",
-            $level,
-            $statusCode,
-            get_class($exception),
-            $exception->getMessage(),
-            $exception->getFile(),
-            $exception->getLine()
-        );
-
-        if ($includeTrace) {
-            $message .= "\nStack trace:\n" . $exception->getTraceAsString();
-        }
-
-        error_log($message);
     }
 }

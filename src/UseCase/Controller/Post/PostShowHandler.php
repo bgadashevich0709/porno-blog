@@ -20,6 +20,7 @@ use App\Traits\PostMapper;
 use App\UseCase\Controller\Post\Dto\PostShowDto;
 use App\UseCase\Event\PostUpdatedEvent;
 use Exception;
+use Psr\Log\LoggerInterface; // Добавили импорт логгера
 
 final readonly class PostShowHandler
 {
@@ -33,6 +34,7 @@ final readonly class PostShowHandler
         private PageViewTracker             $pageViewTracker,
         private EventDispatcher             $dispatcher,
         private PostDtoFactory              $postDtoFactory,
+        private LoggerInterface             $logger, // Внедряем логгер через DI
     ) {}
 
     /**
@@ -57,11 +59,19 @@ final readonly class PostShowHandler
 
     private function trackAndNotify(string $id, PostDto $postDto): void
     {
-        if ($this->pageViewTracker->trackCurrentPage()) {
-            $this->postRepository->incrementViewsCount($id);
-            $postDto->viewsCount++;
+        try {
+            if ($this->pageViewTracker->trackCurrentPage()) {
+                $this->postRepository->incrementViewsCount($id);
+                $postDto->viewsCount++;
 
-            $this->dispatcher->dispatch(new PostUpdatedEvent($id));
+                $this->dispatcher->dispatch(new PostUpdatedEvent($id));
+            }
+        } catch (Exception $e) {
+            $this->logger->error('Ошибка трекера посещений при просмотре поста: ' . $e->getMessage(), [
+                'post_id' => $id,
+                'exception' => $e,
+                'trace' => $e->getTraceAsString(),
+            ]);
         }
     }
 
@@ -134,9 +144,6 @@ final readonly class PostShowHandler
 
     /**
      * Возвращает список похожих постов.
-     *
-     * Критерии в ТЗ не уточнены, поэтому берутся последние посты по дате
-     * из тех же категорий, исключая текущий просматриваемый пост.
      */
     private function getSimilarPosts(string $currentPostId, array $categoryIds, int $limit): array
     {

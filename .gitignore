@@ -2,8 +2,7 @@
 
 /.idea/
 
-/var/smarty/templates_c/
-/var/smarty/cache/
+/var/
 
 /vendor/
 /node_modules/
@@ -14,4 +13,3 @@
 .php-cs-fixer.cache
 
 .vscode/
-

@@ -31,8 +31,9 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 WORKDIR /var/www
 
 RUN mkdir -p /var/www/var/smarty/templates_c \
-    && mkdir -p /var/www/var/smarty/cache
+    && mkdir -p /var/www/var/smarty/cache \
+    && mkdir -p /var/www/var/log
 
-RUN chown -R www-data:www-data /var/www/var/smarty
+RUN chown -R www-data:www-data /var/www/var && chmod -R 775 /var/www/var
 
 CMD ["php-fpm"]
