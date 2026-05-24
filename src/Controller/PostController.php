@@ -6,9 +6,11 @@ use App\Application\Service\Meta\MetaService;
 use App\Common\Controller\AbstractController;
 use App\Common\Middleware\LoggerMiddleware;
 use App\Common\Middleware\ProfilerMiddleware;
+use App\Common\Router\Attribute\AsController;
 use App\Common\Router\Route\Get;
 use App\UseCase\Controller\Post\PostShowHandler;
 
+#[AsController]
 class PostController extends AbstractController
 {
     public function __construct(

@@ -7,10 +7,12 @@ use App\Common\Controller\AbstractController;
 use App\Common\Http\Attribute\MapQueryString;
 use App\Common\Middleware\LoggerMiddleware;
 use App\Common\Middleware\ProfilerMiddleware;
+use App\Common\Router\Attribute\AsController;
 use App\Common\Router\Route\Get;
 use App\UseCase\Controller\Category\CategoryShowHandler;
 use App\UseCase\Controller\Category\Dto\CategoryRequestDto;
 
+#[AsController]
 class CategoryController extends AbstractController
 {
     public function __construct(

@@ -16,9 +16,13 @@ class RoutingServiceProvider implements ServiceProviderInterface
     {
         $router = new Router($container);
 
+        // Старая реализация через ручной массив в конфиге (закомментирована)
+        // $controllersConfiguration = require __DIR__ . '/../../../config/routes.php';
+        // $router->registerControllers($controllersConfiguration);
 
-        $controllersConfiguration = require __DIR__ . '/../../../config/routes.php';
-        $router->registerControllers($controllersConfiguration);
+        // Новая реализация:
+        $router->registerControllers('/var/www/src');
+
         $router->addGlobalMiddleware(GlobalSecurityMiddleware::class);
 
         $container->set(Router::class, static fn() => $router);

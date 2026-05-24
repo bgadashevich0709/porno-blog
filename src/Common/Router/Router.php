@@ -12,6 +12,15 @@ use App\Common\Validator\Exception\ValidationException;
 use App\Exceptions\ResourceNotFoundException;
 use ReflectionClass;
 
+/**
+ * TODO: Провести рефакторинг класса Router, когда кодовая база проекта разрастется.
+ * Текущий класс совмещает слишком много обязанностей (SRP violation).
+ *
+ * Планируемые шаги по разделению монолита:
+ * 1. [ ] Вынести сканирование директорий и парсинг атрибутов #[AsController] в RouteScanner.
+ * 2. [ ] Перенести логику автоматической сборки зависимостей (Autowiring) внутрь Container.php.
+ * 3. [ ] Оставить в Router только хранение маршрутов, сопоставление URL (matching) и запуск Middleware.
+ */
 class Router
 {
     private array $routes = [];
@@ -26,8 +35,14 @@ class Router
         $this->globalMiddlewares[] = $middlewareClass;
     }
 
-    public function registerControllers(array $controllerClasses): void
+    /**
+     * @deprecated Метод устарел, так как требует ручной передачи массива классов.
+     * Используйте актуальный метод registerControllers(string $dirPath).
+     */
+    #[\JetBrains\PhpStorm\Deprecated(reason: 'Используйте автоматическое сканирование директорий', replacement: '%class%->registerControllers($dirPath)')]
+    public function registerControllersDeprecated(array $controllerClasses): void
     {
+
         foreach ($controllerClasses as $controllerClass) {
             $reflection = new ReflectionClass($controllerClass);
 
@@ -35,7 +50,7 @@ class Router
                 $attributes = $method->getAttributes(Route::class, \ReflectionAttribute::IS_INSTANCEOF);
 
                 foreach ($attributes as $attribute) {
-                    /** @var Route $routeAttr */
+                    // @var Route $routeAttr
                     $routeAttr = $attribute->newInstance();
 
                     $this->addRoute(
@@ -51,6 +66,133 @@ class Router
         }
     }
 
+    /**
+     * Универсально и рекурсивно сканирует директорию,
+     * находит абсолютно все контроллеры с атрибутом #[AsController].
+     */
+    public function registerControllers(string $dirPath): void
+    {
+        if (!is_dir($dirPath)) {
+            return;
+        }
+
+        $directoryIterator = new \RecursiveDirectoryIterator($dirPath);
+        $iterator = new \RecursiveIteratorIterator($directoryIterator);
+        $regex = new \RegexIterator($iterator, '/^.+\.php$/i', \RecursiveRegexIterator::GET_MATCH);
+
+        foreach ($regex as $fileMatches) {
+            // КРИТИЧЕСКИ ВАЖНО: берем именно нулевой индекс [0] из совпадений регулярки!
+            $filePath = $fileMatches[0];
+
+            // Динамически вычисляем класс по стандарту PSR-4
+            $controllerClass = $this->resolveClassNameFromFile($filePath);
+
+            if ($controllerClass === null || !class_exists($controllerClass)) {
+                continue;
+            }
+
+            $reflection = new \ReflectionClass($controllerClass);
+
+            // Если у класса нет маркера #[AsController] — скипаем его
+            $hasAsController = !empty($reflection->getAttributes(\App\Common\Router\Attribute\AsController::class));
+
+            if (!$hasAsController) {
+                continue;
+            }
+
+            // Парсим роуты методов
+            foreach ($reflection->getMethods() as $method) {
+
+                $attributes = $method->getAttributes(Route::class, \ReflectionAttribute::IS_INSTANCEOF);
+
+
+                foreach ($attributes as $attribute) {
+                    /** @var Route $routeAttr */
+                    $routeAttr = $attribute->newInstance();
+
+                    $this->addRoute(
+                        httpMethod: $routeAttr->method,
+                        path: $routeAttr->path,
+                        controller: $controllerClass,
+                        method: $method->getName(),
+                        middlewares: $routeAttr->middleware,
+                        format: $routeAttr->format
+                    );
+                }
+            }
+
+            // Регистрируем в контейнере для автовайринга
+            $this->container->set($controllerClass, function (\App\Common\Container\Container $c) use ($controllerClass) {
+                $reflectionForContainer = new \ReflectionClass($controllerClass);
+                $constructor = $reflectionForContainer->getConstructor();
+
+                if ($constructor === null) {
+                    return new $controllerClass();
+                }
+
+                $parameters = $constructor->getParameters();
+                $dependencies = [];
+
+                foreach ($parameters as $parameter) {
+                    $type = $parameter->getType();
+
+                    if ($type instanceof \ReflectionNamedType && !$type->isBuiltin()) {
+                        $dependencies[] = $c->get($type->getName());
+                    } else {
+                        if ($parameter->isDefaultValueAvailable()) {
+                            $dependencies[] = $parameter->getDefaultValue();
+                        } else {
+                            throw new \RuntimeException(
+                                "Невозможно разрешить зависимость для {$parameter->getName()} в {$controllerClass}"
+                            );
+                        }
+                    }
+                }
+
+                return $reflectionForContainer->newInstanceArgs($dependencies);
+            });
+        }
+    }
+
+    /**
+     * Динамически вычисляет PSR-4 неймспейс для любого файла внутри папки src,
+     * учитывая, что папка src/Application/Controller мапится на App\Controller
+     */
+    private function resolveClassNameFromFile(string $filePath): ?string
+    {
+        $filePath = str_replace('\\', '/', $filePath);
+
+        // Ищем вхождение '/src/' в абсолютном пути
+        $srcPosition = strpos($filePath, '/src/');
+        if ($srcPosition === false) {
+            return null;
+        }
+
+        // Отрезаем всё, что до папки src, и убираем расширение .php
+        $relativePart = substr($filePath, $srcPosition + 5);
+        $relativePart = substr($relativePart, 0, -4);
+
+        // УБИРАЕМ "Application/", если файл лежит внутри папки контроллеров
+        if (str_starts_with($relativePart, 'Application/Controller/')) {
+            $relativePart = str_replace('Application/Controller/', 'Controller/', $relativePart);
+        }
+
+        // Мапим путь на дефолтный корневой неймспейс App\
+        return 'App\\' . str_replace('/', '\\', $relativePart);
+    }
+
+    /**
+     * Преобразует сырые данные маршрута (включая динамические параметры вроде {id})
+     * в регулярное выражение и сохраняет всю конфигурацию в общий массив маршрутов.
+     *
+     * @param string $httpMethod HTTP-метод запроса (GET, POST и т.д.)
+     * @param string $path Шаблон URL-пути (например, '/blog/{id}')
+     * @param string $controller Полное имя класса контроллера с неймспейсом
+     * @param string $method Имя вызываемого метода (экшена) в контроллере
+     * @param array $middlewares Массив посредников, назначенных на этот маршрут
+     * @param string $format Ожидаемый формат ответа (например, html или json)
+     * @return void
+     */
     private function addRoute(
         string $httpMethod,
         string $path,
@@ -59,16 +201,21 @@ class Router
         array $middlewares,
         string $format
     ): void {
+        // Конвертируем динамические параметры роута.
+        // Строка вида '/blog/{id}' превратится в регулярное выражение '#^/blog/([^/]+)$#'
+        // Это нужно, чтобы роутер потом мог понять, что вместо {id} в URL может быть любое число или текст.
         $regex = '#^' . preg_replace('#\{[a-zA-Z0-9_]+\}#', '([^/]+)', $path) . '$#';
 
+
+        // Сохраняем всю информацию о маршруте в массив $this->routes
         $this->routes[] = [
-            'httpMethod' => strtoupper($httpMethod),
-            'regex'      => $regex,
-            'path'       => $path,
-            'controller' => $controller,
-            'method'     => $method,
-            'middleware' => $middlewares,
-            'format' => $format,
+            'httpMethod' => strtoupper($httpMethod), // Приводим метод к верхнему регистру (GET, POST)
+            'regex'      => $regex,                  // Маска для проверки совпадения URL
+            'path'       => $path,                   // Оригинальный путь
+            'controller' => $controller,             // Класс контроллера, который за это отвечает
+            'method'     => $method,                 // Функция внутри контроллера
+            'middleware' => $middlewares,            // Список посредников для этого роута
+            'format'     => $format,                 // Формат ответа (html/json)
         ];
     }
 
