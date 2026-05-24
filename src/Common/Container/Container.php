@@ -2,20 +2,20 @@
 
 namespace App\Common\Container;
 
-use Exception;
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
+use RuntimeException;
 
 /**
- * Наш самописный DI-Контейнер. 
- * Он автоматически создает объекты классов и сам подставляет 
+ * Наш самописный DI-Контейнер.
+ * Он автоматически создает объекты классов и сам подставляет
  * им нужные зависимости в конструктор, чтобы нам не делать это вручную.
  */
 class Container implements ContainerInterface
 {
     // Здесь мы храним "рецепты" создания объектов (инструкции, строки, замыкания)
     private array $definitions = [];
-    
+
     // А здесь хранятся уже готовые, один раз созданные объекты (Одиночки / Singletons)
     private array $instances = [];
 
@@ -44,7 +44,7 @@ class Container implements ContainerInterface
 
     /**
      * Самый главный метод. Он выдает готовый объект по его ID.
-     * @throws Exception
+     * @throws RuntimeException
      */
     public function get(string $id): mixed
     {
@@ -63,7 +63,7 @@ class Container implements ContainerInterface
                 return $this->instances[$id] = $definition($this);
             }
 
-            // Если рецепт — это просто строка с именем существующего класса, 
+            // Если рецепт — это просто строка с именем существующего класса,
             // отправляем этот класс на автоматическую сборку зависимостей (autowire)
             if (is_string($definition) && class_exists($definition)) {
                 return $this->instances[$id] = $this->autowire($definition);
@@ -126,23 +126,16 @@ class Container implements ContainerInterface
                 }
             }
 
-            // Если среди загруженных классов нашли ровно один подходящий — автоматически собираем его!
-            if (count($implementations) === 1) {
+            // TODO: необходимо реализовать способ предоставлять конкретную реализацию если об этом попросили
+            // Если нашли хотя бы одну реализацию (одну или больше — неважно)
+            if (count($implementations) >= 1) {
+                // Берем самый первый класс из списка (индекс 0) и собираем его
                 return $this->instances[$id] = $this->autowire($implementations[0]);
-            }
-
-            // Если нашли больше одного класса — контейнер в панике, он не знает какой выбрать.
-            // Выкидываем ошибку и просим разработчика настроить это вручную через setContextual
-            if (count($implementations) > 1) {
-                throw new Exception(
-                    "Interface '{$id}' has multiple implementations: [" . implode(', ', $implementations) . "]. " .
-                    "Please configure contextual binding explicitly using setContextual()."
-                );
             }
         }
 
-        // Если дошли сюда и ничего не нашли — всё плохо, кидаем ошибку.
-        throw new Exception("Service, Interface or Class '{$id}' cannot be resolved.");
+        // Если ничего не нашли - выбрасываем исключение
+        throw new RuntimeException("Service, Interface or Class '{$id}' cannot be resolved.");
     }
 
     /**
@@ -158,11 +151,11 @@ class Container implements ContainerInterface
 
     /**
      * Внутренний механизм "автосборки" (через Рефлексию).
-     * Сканирует конструктор класса, определяет, какие ему нужны зависимости, 
+     * Сканирует конструктор класса, определяет, какие ему нужны зависимости,
      * автоматически создает их через get() и собирает итоговый объект.
-     * 
+     *
      * @throws \ReflectionException
-     * @throws Exception
+     * @throws RuntimeException
      */
     private function autowire(string $class): mixed
     {
@@ -171,13 +164,13 @@ class Container implements ContainerInterface
 
         // Если это абстрактный класс или интерфейс — его нельзя создать физически, ругаемся
         if (!$reflection->isInstantiable()) {
-            throw new Exception("Class '{$class}' is not instantiable.");
+            throw new RuntimeException("Class '{$class}' is not instantiable.");
         }
 
         // Вытаскиваем конструктор класса
         $constructor = $reflection->getConstructor();
 
-        // Если конструктора вообще нет (аргументы не нужны) — просто создаем объект «голышом»
+        // Если constructor === null (аргументы не нужны) — просто создаем объект «голышом»
         if ($constructor === null) {
             return new $class();
         }
@@ -203,12 +196,12 @@ class Container implements ContainerInterface
 
             // Если тип аргумента вообще не указан (просто $variable) — контейнер бессилен, падает с ошибкой
             if ($type === null) {
-                throw new Exception("Cannot resolve parameter '{$paramName}' in '{$class}': Missing type-hint.");
+                throw new RuntimeException("Cannot resolve parameter '{$paramName}' in '{$class}': Missing type-hint.");
             }
 
             // Если тип встроенный (строка, инт, массив, булево) — автосборка не сработает, нужна была настройка
             if ($type->isBuiltin()) {
-                throw new Exception("Cannot autowire built-in parameter '{$paramName}' in '{$class}'.");
+                throw new RuntimeException("Cannot autowire built-in parameter '{$paramName}' in '{$class}'.");
             }
 
             // Если тип — это другой класс или интерфейс, рекурсивно запрашиваем его у нашего же контейнера через get()
@@ -216,7 +209,7 @@ class Container implements ContainerInterface
             $dependencies[] = $this->get($type instanceof \ReflectionNamedType ? $type->getName() : (string) $type);
         }
 
-        // Когда все зависимости из конструктора успешно созданы и лежат в массиве, 
+        // Когда все зависимости из конструктора успешно созданы и лежат в массиве,
         // создаем объект нашего класса, передавая туда этот массив аргументов.
         return $reflection->newInstanceArgs($dependencies);
     }
