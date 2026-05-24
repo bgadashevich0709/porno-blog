@@ -9,6 +9,7 @@ use App\Common\Cache\CacheInterface;
 use App\Common\Container\Container;
 use App\Common\Exception\GlobalExceptionHandler;
 use App\Common\ServiceProvider\ServiceProviderInterface;
+use App\Common\Tracking\Storage\CacheVisitStorage;
 use App\Common\Tracking\Storage\SessionVisitStorage;
 use App\Common\Tracking\VisitStorageInterface;
 use Doctrine\ORM\EntityManager;
@@ -27,6 +28,13 @@ class InfrastructureServiceProvider implements ServiceProviderInterface
         $container->set(EntityManagerInterface::class, $emFactory);
         $container->set(EntityManager::class, $emFactory);
 
-        $container->set(VisitStorageInterface::class, static fn() => new SessionVisitStorage());
+        // Старая реализация через сессии (закомментирована)
+        // $container->set(VisitStorageInterface::class, static fn() => new SessionVisitStorage());
+
+        $container->set(VisitStorageInterface::class, static function (Container $container) {
+            $cache = $container->get(CacheInterface::class);
+
+            return new CacheVisitStorage($cache);
+        });
     }
 }
