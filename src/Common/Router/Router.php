@@ -122,26 +122,48 @@ class Router
             }
 
             // Регистрируем в контейнере для автовайринга
+            // Регистрируем фабрику сборки текущего контроллера в DI-контейнере.
+            // Объект класса НЕ создается прямо сейчас. Мы передаем анонимную функцию (замыкание),
+            // которая сработает лениво — только тогда, когда роутер найдет совпадение по URL
+            // и запросит данный контроллер из контейнера.
             $this->container->set($controllerClass, function (\App\Common\Container\Container $c) use ($controllerClass) {
+
+                // Используем рефлексию, чтобы "просканировать" структуру класса контроллера
                 $reflectionForContainer = new \ReflectionClass($controllerClass);
+
+                // Получаем информацию о конструкторе класса, чтобы узнать его зависимости
                 $constructor = $reflectionForContainer->getConstructor();
 
+                // Если конструктора вообще нет, значит и зависимостей у класса нет.
+                // Просто создаем пустой экземпляр через new и сразу возвращаем его.
                 if ($constructor === null) {
                     return new $controllerClass();
                 }
 
+                // Если конструктор есть, вытаскиваем список всех его аргументов (параметров)
                 $parameters = $constructor->getParameters();
-                $dependencies = [];
+                $dependencies = []; // Сюда по порядку будем складывать готовые объекты-зависимости
 
+                // Перебираем каждый параметр конструктора один за другим
                 foreach ($parameters as $parameter) {
+                    // Узнаем тип текущего аргумента (какой класс или интерфейс там указан)
                     $type = $parameter->getType();
 
+                    // Проверяем: указан ли конкретный класс/интерфейс, и не является ли он базовым типом PHP (типа string, int, array)
                     if ($type instanceof \ReflectionNamedType && !$type->isBuiltin()) {
+
+                        // Магия автовайринга: берем полное имя класса-зависимости (например, MetaService)
+                        // и рекурсивно запрашиваем его у самого контейнера через $c->get()
                         $dependencies[] = $c->get($type->getName());
                     } else {
+                        // Если аргумент — это простой тип (строка, число) или класс не указан,
+                        // проверяем, задано ли для него дефолтное значение в конструкторе (например, = 'default')
                         if ($parameter->isDefaultValueAvailable()) {
+                            // Если дефолтное значение есть — просто берем его
                             $dependencies[] = $parameter->getDefaultValue();
                         } else {
+                            // Если дефолтного значения нет, а контейнер не знает, как собрать этот простой тип,
+                            // аварийно выбрасываем исключение, чтобы не уронить PHP со скрытой ошибкой
                             throw new \RuntimeException(
                                 "Невозможно разрешить зависимость для {$parameter->getName()} в {$controllerClass}"
                             );
@@ -149,6 +171,8 @@ class Router
                     }
                 }
 
+                // Когда все зависимости успешно собраны в массив $dependencies,
+                // динамически создаем объект контроллера, передавая этот массив в его конструктор
                 return $reflectionForContainer->newInstanceArgs($dependencies);
             });
         }
@@ -172,10 +196,6 @@ class Router
         $relativePart = substr($filePath, $srcPosition + 5);
         $relativePart = substr($relativePart, 0, -4);
 
-        // УБИРАЕМ "Application/", если файл лежит внутри папки контроллеров
-        if (str_starts_with($relativePart, 'Application/Controller/')) {
-            $relativePart = str_replace('Application/Controller/', 'Controller/', $relativePart);
-        }
 
         // Мапим путь на дефолтный корневой неймспейс App\
         return 'App\\' . str_replace('/', '\\', $relativePart);
