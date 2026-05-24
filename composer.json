@@ -33,7 +33,7 @@
   },
   "scripts": {
     "db:migrate": "vendor/bin/doctrine-migrations migrations:migrate --no-interaction",
-    "db:fixtures": "php bin/load-fixtures.php",
+    "db:fixtures": "php bin/app fixtures:load",
     "db:reset": [
       "@db:migrate",
       "@db:fixtures"

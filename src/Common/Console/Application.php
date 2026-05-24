@@ -164,6 +164,9 @@ final class Application
             return;
         }
 
+        // Сортируем массив команд по алфавиту (по ключам) перед выводом
+        ksort($this->commands);
+
         // Вычисляем длину самого длинного имени команды, чтобы ровно выровнять описания по колонке
         $maxLength = max(array_map('strlen', array_keys($this->commands)));
 
