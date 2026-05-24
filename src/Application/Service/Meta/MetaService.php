@@ -19,9 +19,9 @@ final readonly class MetaService
     {
         if ($responseDto instanceof HasMetaInterface) {
             return new MetaDto(
-                title: $responseDto->getMetaTitle(),
-                description: $responseDto->getMetaDescription(),
-                keywords: $responseDto->getMetaKeywords()
+                title: $responseDto->getMetaTitle() ?: self::DEFAULT_TITLE,
+                description: $responseDto->getMetaDescription() ?: self::DEFAULT_DESCRIPTION,
+                keywords: $responseDto->getMetaKeywords() ?: self::DEFAULT_KEYWORDS
             );
         }
 
