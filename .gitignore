@@ -1,9 +1,7 @@
 /public/assets/build/
-
 /.idea/
-
 /var/
-
+/coverage-report/
 /vendor/
 /node_modules/
 
