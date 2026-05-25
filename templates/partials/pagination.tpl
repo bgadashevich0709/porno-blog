@@ -1,10 +1,6 @@
-{if isset($pager) && isset($postsData)}
-    {assign var="pages" value=$pager->generate($postsData)}
-
-    <!-- Общая обертка для нижнего блока навигации -->
+{if isset($pages) && isset($postsData)}
     <div class="pagination-wrapper" style="margin-top: 40px; display: flex; flex-direction: column; align-items: center; gap: 20px;">
 
-        <!-- Кнопки переключения страниц -->
         {if !empty($pages)}
             <nav class="pagination-container" style="display: flex; gap: 5px;">
                 {foreach $pages as $page}
@@ -23,7 +19,6 @@
             </nav>
         {/if}
 
-        <!-- Выпадающий список "Показывать по:" -->
         {if isset($limitControl) && !empty($limitControl->options)}
             <div class="per-page-container" style="background: #fff; border: 1px solid #e1e1e1; border-radius: 6px; padding: 10px 15px; display: flex; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
                 <form method="GET" action="" id="perPageForm" style="display: flex; gap: 10px; align-items: center; margin: 0; padding: 0;">
@@ -47,6 +42,5 @@
                 </form>
             </div>
         {/if}
-
     </div>
 {/if}

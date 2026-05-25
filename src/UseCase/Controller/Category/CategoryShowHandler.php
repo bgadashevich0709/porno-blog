@@ -157,7 +157,7 @@ class CategoryShowHandler extends AbstractIdBasedPaginatedHandler
         return new CategoryDataDto(
             category: $category,
             postsData: $paginationResult['postsData'],
-            pager: $paginationResult['pager'],
+            pages: $paginationResult['pages'],
             breadcrumbs: $this->buildBreadcrumbs($category->title),
             sortPanel: $this->buildSortPanel($requestDto),
             limitControl: $this->buildLimitControl($requestDto->perPage)

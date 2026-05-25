@@ -21,6 +21,7 @@ class Pager
 
     /**
      * Преобразует PaginateDto в массив объектов PageDto с жестким лимитом
+     *
      * @return array<PageDto>
      */
     public function generate(PaginateDto $paginateDto): array

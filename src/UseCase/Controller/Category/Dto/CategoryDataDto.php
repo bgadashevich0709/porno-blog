@@ -6,16 +6,19 @@ use App\Application\Dto\CategoryDto;
 use App\Application\Dto\LimitControlDto;
 use App\Application\Dto\SortPanelDto;
 use App\Application\Service\Meta\HasMetaInterface;
+use App\Common\Pagination\Dto\PageDto;
 use App\Common\Pagination\Dto\PaginateDto;
-use App\Common\Pagination\Pager;
 use JsonSerializable;
 
 class CategoryDataDto implements JsonSerializable, HasMetaInterface
 {
+    /**
+     * @param array<PageDto> $pages
+     */
     public function __construct(
         public CategoryDto $category,
         public PaginateDto $postsData,
-        public Pager $pager,
+        public array $pages,
         public array $breadcrumbs,
         public SortPanelDto $sortPanel,
         public LimitControlDto $limitControl
@@ -33,7 +36,6 @@ class CategoryDataDto implements JsonSerializable, HasMetaInterface
     {
         return $this->category->getMetaTitle();
     }
-
 
     public function getMetaDescription(): string
     {

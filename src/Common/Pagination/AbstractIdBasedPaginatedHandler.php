@@ -56,9 +56,11 @@ abstract class AbstractIdBasedPaginatedHandler
             }
         }
 
+        $pager = new Pager($this->createUrlGenerator($context));
+
         return [
             'postsData' => $paginateDto,
-            'pager'     => new Pager($this->createUrlGenerator($context), $requestDto->getPerPage()),
+            'pages'     => $pager->generate($paginateDto),
         ];
     }
 

@@ -33,7 +33,7 @@
             </div>
 
             {include file="partials/pagination.tpl"
-            pager=$data->pager
+            pages=$data->pages
             postsData=$data->postsData
             limitControl=$data->limitControl
             }
