@@ -7,19 +7,12 @@ use App\Common\Http\Attribute\MapQueryString;
 use App\Common\Http\Context;
 use App\Common\Http\Request;
 use App\Common\Http\RequestDtoResolver;
-use App\Common\Router\Route\Route;
 use App\Common\Validator\Exception\ValidationException;
 use App\Exceptions\ResourceNotFoundException;
-use ReflectionClass;
 
 /**
- * TODO: Провести рефакторинг класса Router, когда кодовая база проекта разрастется.
- * Текущий класс совмещает слишком много обязанностей (SRP violation).
- *
- * Планируемые шаги по разделению монолита:
- * 1. [ ] Вынести сканирование директорий и парсинг атрибутов #[AsController] в RouteScanner.
- * 2. [ ] Перенести логику автоматической сборки зависимостей (Autowiring) внутрь Container.php.
- * 3. [ ] Оставить в Router только хранение маршрутов, сопоставление URL (matching) и запуск Middleware.
+ * Класс Router выполняет роль диспетчера: хранит карту маршрутов,
+ * сопоставляет входящий Request с URL (matching) и запускает пайплайн Middleware.
  */
 class Router
 {
@@ -27,7 +20,8 @@ class Router
     private array $globalMiddlewares = [];
 
     public function __construct(
-        private readonly Container $container
+        private readonly Container $container,
+        private readonly RouteScanner $scanner
     ) {}
 
     public function addGlobalMiddleware(string $middlewareClass): void
@@ -35,35 +29,9 @@ class Router
         $this->globalMiddlewares[] = $middlewareClass;
     }
 
-    /**
-     * @deprecated Метод устарел, так как требует ручной передачи массива классов.
-     * Используйте актуальный метод registerControllers(string $dirPath).
-     */
-    #[\JetBrains\PhpStorm\Deprecated(reason: 'Используйте автоматическое сканирование директорий', replacement: '%class%->registerControllers($dirPath)')]
-    public function registerControllersDeprecated(array $controllerClasses): void
+    public function getRoutes(): array
     {
-
-        foreach ($controllerClasses as $controllerClass) {
-            $reflection = new ReflectionClass($controllerClass);
-
-            foreach ($reflection->getMethods() as $method) {
-                $attributes = $method->getAttributes(Route::class, \ReflectionAttribute::IS_INSTANCEOF);
-
-                foreach ($attributes as $attribute) {
-                    // @var Route $routeAttr
-                    $routeAttr = $attribute->newInstance();
-
-                    $this->addRoute(
-                        httpMethod: $routeAttr->method,
-                        path: $routeAttr->path,
-                        controller: $controllerClass,
-                        method: $method->getName(),
-                        middlewares: $routeAttr->middleware,
-                        format: $routeAttr->format
-                    );
-                }
-            }
-        }
+        return $this->routes;
     }
 
     /**
@@ -72,133 +40,25 @@ class Router
      */
     public function registerControllers(string $dirPath): void
     {
-        if (!is_dir($dirPath)) {
-            return;
+        // Вызываем твой отлаженный сканер
+        $scanResult = $this->scanner->scan($dirPath);
+
+        // 1. Регистрируем все найденные роуты в карту маршрутов роутера
+        foreach ($scanResult['routes'] as $route) {
+            $this->addRoute(
+                httpMethod: $route['httpMethod'],
+                path: $route['path'],
+                controller: $route['controller'],
+                method: $route['method'],
+                middlewares: $route['middlewares'],
+                format: $route['format']
+            );
         }
 
-        $directoryIterator = new \RecursiveDirectoryIterator($dirPath);
-        $iterator = new \RecursiveIteratorIterator($directoryIterator);
-        $regex = new \RegexIterator($iterator, '/^.+\.php$/i', \RecursiveRegexIterator::GET_MATCH);
-
-        foreach ($regex as $fileMatches) {
-            // КРИТИЧЕСКИ ВАЖНО: берем именно нулевой индекс [0] из совпадений регулярки!
-            $filePath = $fileMatches[0];
-
-            // Динамически вычисляем класс по стандарту PSR-4
-            $controllerClass = $this->resolveClassNameFromFile($filePath);
-
-            if ($controllerClass === null || !class_exists($controllerClass)) {
-                continue;
-            }
-
-            $reflection = new \ReflectionClass($controllerClass);
-
-            // Если у класса нет маркера #[AsController] — скипаем его
-            $hasAsController = !empty($reflection->getAttributes(\App\Common\Router\Attribute\AsController::class));
-
-            if (!$hasAsController) {
-                continue;
-            }
-
-            // Парсим роуты методов
-            foreach ($reflection->getMethods() as $method) {
-
-                $attributes = $method->getAttributes(Route::class, \ReflectionAttribute::IS_INSTANCEOF);
-
-
-                foreach ($attributes as $attribute) {
-                    /** @var Route $routeAttr */
-                    $routeAttr = $attribute->newInstance();
-
-                    $this->addRoute(
-                        httpMethod: $routeAttr->method,
-                        path: $routeAttr->path,
-                        controller: $controllerClass,
-                        method: $method->getName(),
-                        middlewares: $routeAttr->middleware,
-                        format: $routeAttr->format
-                    );
-                }
-            }
-
-            // Регистрируем в контейнере для автовайринга
-            // Регистрируем фабрику сборки текущего контроллера в DI-контейнере.
-            // Объект класса НЕ создается прямо сейчас. Мы передаем анонимную функцию (замыкание),
-            // которая сработает лениво — только тогда, когда роутер найдет совпадение по URL
-            // и запросит данный контроллер из контейнера.
-            $this->container->set($controllerClass, function (\App\Common\Container\Container $c) use ($controllerClass) {
-
-                // Используем рефлексию, чтобы "просканировать" структуру класса контроллера
-                $reflectionForContainer = new \ReflectionClass($controllerClass);
-
-                // Получаем информацию о конструкторе класса, чтобы узнать его зависимости
-                $constructor = $reflectionForContainer->getConstructor();
-
-                // Если конструктора вообще нет, значит и зависимостей у класса нет.
-                // Просто создаем пустой экземпляр через new и сразу возвращаем его.
-                if ($constructor === null) {
-                    return new $controllerClass();
-                }
-
-                // Если конструктор есть, вытаскиваем список всех его аргументов (параметров)
-                $parameters = $constructor->getParameters();
-                $dependencies = []; // Сюда по порядку будем складывать готовые объекты-зависимости
-
-                // Перебираем каждый параметр конструктора один за другим
-                foreach ($parameters as $parameter) {
-                    // Узнаем тип текущего аргумента (какой класс или интерфейс там указан)
-                    $type = $parameter->getType();
-
-                    // Проверяем: указан ли конкретный класс/интерфейс, и не является ли он базовым типом PHP (типа string, int, array)
-                    if ($type instanceof \ReflectionNamedType && !$type->isBuiltin()) {
-
-                        // Магия автовайринга: берем полное имя класса-зависимости (например, MetaService)
-                        // и рекурсивно запрашиваем его у самого контейнера через $c->get()
-                        $dependencies[] = $c->get($type->getName());
-                    } else {
-                        // Если аргумент — это простой тип (строка, число) или класс не указан,
-                        // проверяем, задано ли для него дефолтное значение в конструкторе (например, = 'default')
-                        if ($parameter->isDefaultValueAvailable()) {
-                            // Если дефолтное значение есть — просто берем его
-                            $dependencies[] = $parameter->getDefaultValue();
-                        } else {
-                            // Если дефолтного значения нет, а контейнер не знает, как собрать этот простой тип,
-                            // аварийно выбрасываем исключение, чтобы не уронить PHP со скрытой ошибкой
-                            throw new \RuntimeException(
-                                "Невозможно разрешить зависимость для {$parameter->getName()} в {$controllerClass}"
-                            );
-                        }
-                    }
-                }
-
-                // Когда все зависимости успешно собраны в массив $dependencies,
-                // динамически создаем объект контроллера, передавая этот массив в его конструктор
-                return $reflectionForContainer->newInstanceArgs($dependencies);
-            });
+        // 2. Скармливаем ленивые фабрики контроллеров твоему DI-контейнеру
+        foreach ($scanResult['controllers'] as $controllerClass => $factory) {
+            $this->container->set($controllerClass, $factory);
         }
-    }
-
-    /**
-     * Динамически вычисляет PSR-4 неймспейс для любого файла внутри папки src,
-     * учитывая, что папка src/Application/Controller мапится на App\Controller
-     */
-    private function resolveClassNameFromFile(string $filePath): ?string
-    {
-        $filePath = str_replace('\\', '/', $filePath);
-
-        // Ищем вхождение '/src/' в абсолютном пути
-        $srcPosition = strpos($filePath, '/src/');
-        if ($srcPosition === false) {
-            return null;
-        }
-
-        // Отрезаем всё, что до папки src, и убираем расширение .php
-        $relativePart = substr($filePath, $srcPosition + 5);
-        $relativePart = substr($relativePart, 0, -4);
-
-
-        // Мапим путь на дефолтный корневой неймспейс App\
-        return 'App\\' . str_replace('/', '\\', $relativePart);
     }
 
     /**
@@ -344,10 +204,5 @@ class Router
     {
         $format = $route['format'] ?? 'html';
         $_SERVER['ROUTE_FORMAT'] = strtolower($format);
-    }
-
-    public function getRoutes(): array
-    {
-        return $this->routes;
     }
 }
