@@ -29,8 +29,17 @@ services:
     networks:
       - my_network
 
-  db:
+  # Мастер
+  db_master:
     image: mysql:8.0
+    command: [
+      "--server-id=1",
+      "--log-bin=mysql-bin",
+      "--binlog-format=ROW",
+      "--gtid-mode=ON",                  # ВКЛЮЧАЕМ GTID
+      "--enforce-gtid-consistency=ON",    # СТРОГАЯ КОНСИСТЕНТНОСТЬ
+      "--log-replica-updates=ON"         # ЛОГИРОВАНИЕ ДЛЯ РЕПЛИК
+    ]
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:?Error - DB_PASSWORD is required in .env}
       MYSQL_DATABASE: ${DB_NAME:?Error - DB_NAME is required in .env}
@@ -39,7 +48,32 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - mysql_master_data:/var/lib/mysql
+      - ./init-master.sql:/docker-entrypoint-initdb.d/init-master.sql
+    networks:
+      - my_network
+      
+  db_slave:
+    image: mysql:8.0
+    command: [
+      "--server-id=2",
+      "--relay-log=mysql-relay-bin",
+      "--read-only=ON",
+      "--gtid-mode=ON",
+      "--enforce-gtid-consistency=ON",
+      "--log-replica-updates=ON"
+    ]
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:?Error - DB_PASSWORD is required in .env}
+      MYSQL_DATABASE: ${DB_NAME:?Error - DB_NAME is required in .env}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_slave_data:/var/lib/mysql
+      # МАППИМ НАШ БАШ-СКРИПТ:
+      - ./init-slave.sh:/docker-entrypoint-initdb.d/init-slave.sh
+    depends_on:
+      - db_master
     networks:
       - my_network
 
@@ -55,5 +89,6 @@ networks:
     driver: bridge
 
 volumes:
-  mysql_data:
+  mysql_master_data: # Переименовал, чтобы не мешать старым ассетам
+  mysql_slave_data:
   app_var:
