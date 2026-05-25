@@ -11,5 +11,7 @@
 .env.local
 
 .php-cs-fixer.cache
+/phpunit.xml.local
+/.phpunit.result.cache
 
 .vscode/

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="vendor/autoload.php" colors="true">
+
+    <testsuites>
+        <testsuite name="Application Test Suite">
+            <directory>tests</directory>
+        </testsuite>
+    </testsuites>
+
+    <php>
+        <env name="TEST_APP_HOST" value="blog-nginx-1"/>
+        <env name="TEST_APP_PORT" value="80"/>
+        <env name="TEST_HOST_HEADER" value="localhost:8080"/>
+    </php>
+</phpunit>
