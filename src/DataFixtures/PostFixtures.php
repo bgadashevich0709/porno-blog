@@ -10,7 +10,7 @@ use Symfony\Component\Console\Output\ConsoleOutput;
 class PostFixtures implements FixtureInterface
 {
     //private const int TOTAL_POSTS = 2000000;//максимальное на чем я проверял
-    private const int TOTAL_POSTS = 20000;
+    private const int TOTAL_POSTS = 500000;
     private const int BATCH_SIZE = 10000;
     //    private const int BATCH_SIZE = 5000;
 
