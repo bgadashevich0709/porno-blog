@@ -11,6 +11,8 @@ use App\Exceptions\ResourceNotFoundException;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
+// <-- Импортируем наше новое исключение
+
 class GlobalExceptionHandler
 {
     // Моментально объявляем и инициализируем свойство прямо здесь
@@ -35,6 +37,21 @@ class GlobalExceptionHandler
         $strategy = ResponseStrategyFactory::createFromCurrentRequest();
 
         switch (true) {
+            case $exception instanceof UnauthorizedException:
+                $statusCode = $exception->getStatusCode();
+                $template = 'errors/401.tpl';
+                $data = [
+                    'success' => false,
+                    'message' => $exception->getMessage() ?: 'Необходима авторизация',
+                ];
+                $this->logger->warning($exception->getMessage() ?: 'Необходима авторизация', [
+                    'status_code' => $statusCode,
+                    'exception'   => get_class($exception),
+                    'file'        => $exception->getFile(),
+                    'line'        => $exception->getLine(),
+                ]);
+                break;
+
             case $exception instanceof ResourceNotFoundException:
                 $statusCode = 404;
                 $template = 'errors/404.tpl';
