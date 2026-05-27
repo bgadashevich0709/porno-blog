@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use App\Application\Provider\BusinessLogicServiceProvider;
-use App\Application\Provider\EventServiceProvider;
-use App\Application\Provider\InfrastructureServiceProvider;
-use App\Application\Provider\RoutingServiceProvider;
+use App\Modules\Blog\Application\Provider\BusinessLogicServiceProvider;
+use App\Modules\Blog\Application\Provider\EventServiceProvider;
+use App\Modules\Blog\Application\Provider\InfrastructureServiceProvider;
+use App\Modules\Blog\Application\Provider\RoutingServiceProvider;
 
 return [
     new InfrastructureServiceProvider(),
