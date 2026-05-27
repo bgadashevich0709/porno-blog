@@ -7,6 +7,7 @@ namespace App\Common\Pagination;
 use App\Common\Cache\CacheInterface;
 use App\Common\Debug\CacheProfiler;
 use App\Common\Pagination\Dto\PaginateDto;
+use App\Common\Pagination\Dto\PaginationContext;
 use App\Common\Router\UrlGenerator;
 
 abstract class AbstractIdBasedPaginatedHandler
@@ -16,47 +17,27 @@ abstract class AbstractIdBasedPaginatedHandler
         private readonly CacheInterface $cache
     ) {}
 
-    protected function paginate(PaginationRequestInterface $requestDto, array $context = []): array
+    protected function paginate(PaginationRequestInterface $requestDto, PaginationContext $context): array
     {
-        $context['requestDto'] = $requestDto;
+        $cacheKey = $this->generateCacheKey($requestDto, $context);
+        $paginateDto = $this->cache->get($cacheKey);
 
-        if (!$this->isCacheEnabled($context)) {
+        if (!$paginateDto instanceof PaginateDto) {
             CacheProfiler::logHit(false);
+
             $paginateDto = $this->executePaginationQuery($requestDto, $context);
-        } else {
-            $signatureData = [
-                'request'      => $requestDto->toArray(),
-                'route_method' => $context['route_method'] ?? 'show',
-                'route_params' => $context['route_params'] ?? [],
-            ];
 
-            $signature = md5(serialize($signatureData));
-
-            $cacheKey = sprintf(
-                '%s_res_%s',
-                $context['cache_prefix'] ?? strtolower(basename(str_replace('\\', '/', static::class))),
-                $signature
+            $this->cache->set(
+                $cacheKey,
+                $paginateDto,
+                $context->cacheTtl,
+                $context->cacheTags
             );
-
-            $paginateDto = $this->cache->get($cacheKey);
-
-            if (!$paginateDto instanceof PaginateDto) {
-                CacheProfiler::logHit(false);
-
-                $paginateDto = $this->executePaginationQuery($requestDto, $context);
-
-                $this->cache->set(
-                    $cacheKey,
-                    $paginateDto,
-                    $this->getCacheTtl($context),
-                    $this->getCacheTags($context)
-                );
-            } else {
-                CacheProfiler::logHit(true);
-            }
+        } else {
+            CacheProfiler::logHit(true);
         }
 
-        $pager = new Pager($this->createUrlGenerator($context));
+        $pager = new Pager($this->createUrlGenerator($requestDto, $context));
 
         return [
             'postsData' => $paginateDto,
@@ -64,13 +45,24 @@ abstract class AbstractIdBasedPaginatedHandler
         ];
     }
 
-    protected function createUrlGenerator(array $context): PagerUrlGenerator
+    private function generateCacheKey(PaginationRequestInterface $requestDto, PaginationContext $context): string
     {
-        $requestDto = $context['requestDto'] ?? null;
-        if (!$requestDto instanceof PaginationRequestInterface) {
-            throw new \InvalidArgumentException('Context must contain an instance of PaginationRequestInterface.');
-        }
+        $prefix = $context->cachePrefix ?? strtolower(basename(str_replace('\\', '/', static::class)));
 
+        $queryParams = $requestDto->toArray();
+        ksort($queryParams);
+
+        $signatureData = [
+            'request'      => $queryParams,
+            'route_method' => $context->routeMethod,
+            'route_params' => $context->routeParams,
+        ];
+
+        return sprintf('%s_res_%s', $prefix, md5(json_encode($signatureData, JSON_THROW_ON_ERROR)));
+    }
+
+    private function createUrlGenerator(PaginationRequestInterface $requestDto, PaginationContext $context): PagerUrlGenerator
+    {
         $queryParams = $requestDto->toArray();
         foreach ($queryParams as $key => $value) {
             $queryParams[$key] = match (true) {
@@ -82,34 +74,14 @@ abstract class AbstractIdBasedPaginatedHandler
 
         return new PagerUrlGenerator(
             $this->urlGenerator,
-            $context['route_controller'] ?? throw new \InvalidArgumentException('Missing "route_controller"'),
-            $context['route_method'] ?? 'show',
-            $context['route_params'] ?? [],
+            $context->routeController,
+            $context->routeMethod,
+            $context->routeParams,
             $queryParams
         );
     }
 
-    protected function isCacheEnabled(array $context): bool
-    {
-        return true;
-    }
-
-    protected function getCacheTtl(array $context): int
-    {
-        return 300;
-    }
-
-    protected function getCacheTags(array $context): array
-    {
-        return ['posts_list'];
-    }
-
-    abstract protected function getTotalCount(array $context): int;
-    abstract protected function fetchIds(int $offset, int $perPage, PaginationRequestInterface $requestDto, array $context): array;
-    abstract protected function fetchFullRowsByIds(array $idList, array $context): array;
-    abstract protected function mapRowsToDto(array $rows): array;
-
-    private function executePaginationQuery(PaginationRequestInterface $requestDto, array $context): PaginateDto
+    private function executePaginationQuery(PaginationRequestInterface $requestDto, PaginationContext $context): PaginateDto
     {
         $totalItems = $this->getTotalCount($context);
         $totalPages = (int) ceil($totalItems / $requestDto->getPerPage());
@@ -125,4 +97,9 @@ abstract class AbstractIdBasedPaginatedHandler
 
         return new PaginateDto($mappedItems, $requestDto->getPage(), $requestDto->getPerPage(), $totalItems, $totalPages);
     }
+
+    abstract protected function getTotalCount(PaginationContext $context): int;
+    abstract protected function fetchIds(int $offset, int $perPage, PaginationRequestInterface $requestDto, PaginationContext $context): array;
+    abstract protected function fetchFullRowsByIds(array $idList, PaginationContext $context): array;
+    abstract protected function mapRowsToDto(array $rows): array;
 }

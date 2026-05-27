@@ -6,6 +6,7 @@ namespace App\Modules\Blog\UseCase\Controller\Category;
 
 use App\Common\Cache\CacheInterface;
 use App\Common\Pagination\AbstractIdBasedPaginatedHandler;
+use App\Common\Pagination\Dto\PaginationContext;
 use App\Common\Pagination\PaginationRequestInterface;
 use App\Common\Router\UrlGenerator;
 use App\Exceptions\ResourceNotFoundException;
@@ -51,26 +52,29 @@ class CategoryShowHandler extends AbstractIdBasedPaginatedHandler
         return $this->buildCategoryDataDto($category, $paginationResult, $requestDto);
     }
 
-    protected function getCacheTags(array $context): array
+    protected function getCacheTags(PaginationContext $context): array
     {
-        return ['posts_list', "category_{$context['categoryId']}_posts"];
+        $categoryId = $context->getParam('categoryId') ?? '';
+        return ['posts_list', "category_{$categoryId}_posts"];
     }
 
-    protected function isCacheEnabled(array $context): bool
+    protected function isCacheEnabled(PaginationContext $context): bool
     {
         return true;
     }
 
-    protected function getTotalCount(array $context): int
+    protected function getTotalCount(PaginationContext $context): int
     {
-        $countQb = $this->postRepository->getCountQueryBuilder($context['categoryId']);
+        $categoryId = $context->getParam('categoryId') ?? '';
+        $countQb = $this->postRepository->getCountQueryBuilder($categoryId);
         return (int) $countQb->executeQuery()->fetchOne();
     }
 
-    protected function fetchIds(int $offset, int $perPage, PaginationRequestInterface $requestDto, array $context): array
+    protected function fetchIds(int $offset, int $perPage, PaginationRequestInterface $requestDto, PaginationContext $context): array
     {
+        $categoryId = $context->getParam('categoryId') ?? '';
         $idQb = $this->postRepository->getIdSubQueryBuilder(
-            categoryId: $context['categoryId'],
+            categoryId: $categoryId,
             sortField: $requestDto->getSortField(),
             sortWay: $requestDto->getSortWay()
         );
@@ -81,7 +85,7 @@ class CategoryShowHandler extends AbstractIdBasedPaginatedHandler
     /**
      * @throws Exception
      */
-    protected function fetchFullRowsByIds(array $idList, array $context): array
+    protected function fetchFullRowsByIds(array $idList, PaginationContext $context): array
     {
         if (empty($idList)) {
             return [];
@@ -142,14 +146,17 @@ class CategoryShowHandler extends AbstractIdBasedPaginatedHandler
 
     private function getPaginatedPosts(string $categoryId, CategoryRequestDto $requestDto): array
     {
-        return $this->paginate($requestDto, [
-            'categoryId'       => $categoryId,
-            'requestDto'       => $requestDto,
-            'route_controller' => CategoryController::class,
-            'route_method'     => 'show',
-            'route_params'     => ['id' => $categoryId],
-            'cache_prefix'     => "category_{$categoryId}",
-        ]);
+        $context = new PaginationContext(
+            routeController: CategoryController::class,
+            routeMethod: 'show',
+            routeParams: ['id' => $categoryId],
+            cachePrefix: "category_{$categoryId}",
+            cacheTags: ['posts_list', "category_{$categoryId}_posts"],
+            cacheTtl: 300,
+            additionalParams: ['categoryId' => $categoryId]
+        );
+
+        return $this->paginate($requestDto, $context);
     }
 
     private function buildCategoryDataDto(CategoryDto $category, array $paginationResult, CategoryRequestDto $requestDto): CategoryDataDto
