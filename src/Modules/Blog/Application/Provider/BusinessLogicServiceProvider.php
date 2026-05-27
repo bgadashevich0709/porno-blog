@@ -7,6 +7,7 @@ namespace App\Modules\Blog\Application\Provider;
 use App\Common\Cache\CacheInterface;
 use App\Common\Container\Container;
 use App\Common\Router\UrlGenerator;
+use App\Common\ServiceProvider\ServiceProvider;
 use App\Common\ServiceProvider\ServiceProviderInterface;
 use App\Modules\Blog\Application\Service\PostDtoFactory;
 use App\Modules\Blog\Repository\CategoryRepositoryInterface;
@@ -16,6 +17,7 @@ use App\Modules\Blog\UseCase\Controller\HomePage\Handler\CachedHomePageIndexHand
 use App\Modules\Blog\UseCase\Controller\HomePage\Handler\HomePageIndexHandler;
 use App\Modules\Blog\UseCase\Controller\HomePage\Handler\HomePageIndexHandlerInterface;
 
+#[ServiceProvider]
 class BusinessLogicServiceProvider implements ServiceProviderInterface
 {
     public function register(Container $container): void

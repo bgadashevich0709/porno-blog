@@ -2,13 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\Modules\Blog\Application\Provider;
+namespace App\Common\ServiceProvider\ServiceProvider;
 
 use App\Common\Cache\CacheFactory;
 use App\Common\Cache\CacheInterface;
 use App\Common\Container\Container;
 use App\Common\Exception\GlobalExceptionHandler;
 use App\Common\Log\FileLogger;
+use App\Common\ServiceProvider\ServiceProvider;
 use App\Common\ServiceProvider\ServiceProviderInterface;
 use App\Common\Tracking\Storage\CacheVisitStorage;
 use App\Common\Tracking\VisitStorageInterface;
@@ -16,9 +17,8 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 
-//use App\Common\Tracking\Storage\SessionVisitStorage;
-
-class InfrastructureServiceProvider implements ServiceProviderInterface
+#[ServiceProvider]
+class CommonInfrastructureServiceProvider implements ServiceProviderInterface
 {
     public function register(Container $container): void
     {

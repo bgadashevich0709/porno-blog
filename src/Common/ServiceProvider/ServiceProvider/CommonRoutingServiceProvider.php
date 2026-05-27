@@ -2,16 +2,18 @@
 
 declare(strict_types=1);
 
-namespace App\Modules\Blog\Application\Provider;
+namespace App\Common\ServiceProvider\ServiceProvider;
 
 use App\Common\Container\Container;
 use App\Common\Middleware\GlobalSecurityMiddleware;
 use App\Common\Router\Router;
 use App\Common\Router\RouteScanner;
 use App\Common\Router\UrlGenerator;
+use App\Common\ServiceProvider\ServiceProvider;
 use App\Common\ServiceProvider\ServiceProviderInterface;
 
-class RoutingServiceProvider implements ServiceProviderInterface
+#[ServiceProvider]
+class CommonRoutingServiceProvider implements ServiceProviderInterface
 {
     public function register(Container $container): void
     {

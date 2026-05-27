@@ -6,18 +6,30 @@ declare(strict_types=1);
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../cli-config.php';
 
-use App\Common\Console\Application;
 use App\Common\Container\Container;
+use App\Common\ServiceProvider\ServiceProviderBootstrapper;
+use App\Common\Console\Application;
+
+// 1. Исправляем корень: так как bin/app лежит в /var/www/bin,
+// dirname(__DIR__) вернет ровно /var/www
+define('APP_ROOT', dirname(__DIR__));
 
 $container = new Container();
 
-$providers = require __DIR__ . '/../config/providers.php';
-foreach ($providers as $provider) {
-    $provider->register($container);
-}
+$bootstrapper = new ServiceProviderBootstrapper(
+    scanDirs: [
+        APP_ROOT . '/src/Common/ServiceProvider',
+        APP_ROOT . '/src/Modules',
+    ],
+    cacheDir: APP_ROOT . '/var/cache'
+);
+
+$bootstrapper->boot($container, isDebug: true);
 
 $app = new Application($container);
-$app->autoDiscoverCommands(realpath(__DIR__ . '/../src'), 'App\\');
+
+// 2. Теперь здесь соберется правильный абсолютный путь: /var/www/src
+$app->autoDiscoverCommands(realpath(APP_ROOT . '/src'), 'App\\');
 
 $exitCode = $app->run($_SERVER['argv']);
 exit($exitCode);

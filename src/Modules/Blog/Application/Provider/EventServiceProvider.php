@@ -7,11 +7,13 @@ namespace App\Modules\Blog\Application\Provider;
 use App\Common\Cache\CacheInterface;
 use App\Common\Container\Container;
 use App\Common\Event\EventDispatcher;
+use App\Common\ServiceProvider\ServiceProvider;
 use App\Common\ServiceProvider\ServiceProviderInterface;
 use App\Modules\Blog\UseCase\Event\CategoryUpdatedEvent;
 use App\Modules\Blog\UseCase\Event\PostUpdatedEvent;
 use App\Modules\Blog\UseCase\Listener\InvalidateCacheListener;
 
+#[ServiceProvider]
 class EventServiceProvider implements ServiceProviderInterface
 {
     public function register(Container $container): void

@@ -22,7 +22,17 @@ require_once __DIR__ . '/vendor/autoload.php';
  */
 function getEntityManager(): EntityManager
 {
-    $paths = [__DIR__ . '/src/Entity'];
+    $rootPath = defined('APP_ROOT') ? APP_ROOT : __DIR__;
+
+    // TODO: Рефакторинг метаданных Doctrine ORM
+    // Текущая реализация с жестко прописанными путями к модулям является временной.
+    // При добавлении новых функциональных модулей (например, Admin, Users) этот массив придется расширять вручную.
+    // Необходимо переписать на автоматический сбор путей: написать EntityPathResolver (или интегрировать в существующий
+    // ServiceProviderBootstrapper), который будет динамически сканировать директорию `src/Modules/*/Entity`
+    // и автоматически регистрировать пространства имен для маппинга Doctrine.
+    $paths = [
+        $rootPath . '/src/Modules/Blog/Entity',
+    ];
 
     // TODO: Из-за багов автоконфигурации Doctrine ORM при $isDevMode = false (когда APP_DEBUG=false),
     // она принудительно пытается подключиться к локальному Redis по адресу 127.0.0.1:6379, полностью
